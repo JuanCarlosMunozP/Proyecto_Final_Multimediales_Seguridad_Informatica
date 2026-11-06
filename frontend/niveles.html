@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visor de niveles</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #111; font-family: "Segoe UI", Arial, sans-serif; }
+    #panel { position: fixed; top: 12px; left: 12px; color: #eee; font-size: 13px; line-height: 1.7;
+      background: rgba(20,14,18,.72); padding: 10px 14px; border-radius: 10px; max-width: 340px; }
+    #panel h1 { margin: 0 0 6px; font-size: 16px; color: #ffc27a; }
+    button { margin: 2px 4px 2px 0; padding: 4px 10px; border: 1px solid #ffc27a66; border-radius: 6px;
+      background: #2a1d22; color: #eee; cursor: pointer; font: inherit; }
+    button.activo { background: #ffc27a; color: #221; }
+    b { color: #ffc27a; }
+    #estado { margin-top: 6px; color: #aaa; }
+  </style>
+</head>
+<body>
+  <div id="panel">
+    <h1>Visor de niveles</h1>
+    <div id="niveles"></div>
+    <div id="vistas"></div>
+    <div><b>Arrastrar</b> girar · <b>Rueda</b> zoom · <b>W A S D</b> mover el foco · <b>P</b> mostrar/ocultar salida</div>
+    <div id="estado">Cargando…</div>
+  </div>
+  <script type="module" src="/src/herramientas/niveles.js"></script>
+</body>
+</html>
