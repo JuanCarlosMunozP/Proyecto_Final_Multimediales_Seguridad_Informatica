@@ -20,9 +20,11 @@ export class Sonido {
     this.maestro.connect(this.ctx.destination);
 
     this.ruido = this.crearRuido();
+    this.crearBlanco();
     this.crearOceano();
     this.crearViento();
     this.crearFuego();
+    this.crearOasis();
     this.crearMusica();
   }
 
@@ -62,9 +64,146 @@ export class Sonido {
     prof.gain.value = 0.15;
     lfo.connect(prof).connect(ganancia.gain);
 
-    src.connect(filtro).connect(ganancia).connect(this.maestro);
+    // volumen general del mar: lo fija ajustarAgua segun lo cerca que este el agua
+    this.mar = ctx.createGain();
+    this.mar.gain.value = 0;
+    src.connect(filtro).connect(ganancia).connect(this.mar).connect(this.maestro);
+
+    // espuma: siseo agudo que sube con cada ola y se retira
+    const espuma = this.fuente(this.ruidoBlanco);
+    const fe = ctx.createBiquadFilter();
+    fe.type = "bandpass";
+    fe.frequency.value = 2200;
+    fe.Q.value = 0.4;
+    const ge = ctx.createGain();
+    ge.gain.value = 0.02;
+    const lfoE = ctx.createOscillator();
+    lfoE.frequency.value = 0.12;
+    const profE = ctx.createGain();
+    profE.gain.value = 0.018;
+    lfoE.connect(profE).connect(ge.gain);
+    espuma.connect(fe).connect(ge).connect(this.mar);
+    espuma.start();
+    lfoE.start();
     src.start();
     lfo.start();
+  }
+
+  crearBlanco() {
+    const ctx = this.ctx;
+    this.ruidoBlanco = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+    const datos = this.ruidoBlanco.getChannelData(0);
+    for (let i = 0; i < datos.length; i++) datos[i] = Math.random() * 2 - 1;
+    return this.ruidoBlanco;
+  }
+
+  // Estanque del oasis: murmullo claro de agua quieta y gotas sueltas. Suena segun la cercania (ajustarAgua).
+  crearOasis() {
+    const ctx = this.ctx;
+    this.oasis = ctx.createGain();
+    this.oasis.gain.value = 0;
+    this.oasis.connect(this.maestro);
+    this.volOasis = 0;
+    const src = this.fuente(this.ruidoBlanco);
+    const f = ctx.createBiquadFilter();
+    f.type = "bandpass";
+    f.frequency.value = 1100;
+    f.Q.value = 1.2;
+    const g = ctx.createGain();
+    g.gain.value = 0.05;
+    src.connect(f).connect(g).connect(this.oasis);
+    src.start();
+    setInterval(() => {
+      if (this.volOasis > 0.02) g.gain.setTargetAtTime(0.03 + Math.random() * 0.05, ctx.currentTime, 0.4);
+    }, 600);
+    const gotear = () => {
+      if (this.volOasis > 0.02) this.gota();
+      setTimeout(gotear, 400 + Math.random() * 1600);
+    };
+    gotear();
+  }
+
+  // gota que cae al estanque: tono corto que sube rapido
+  gota() {
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    o.type = "sine";
+    const f = 900 + Math.random() * 1100;
+    o.frequency.setValueAtTime(f, t);
+    o.frequency.exponentialRampToValueAtTime(f * 1.9, t + 0.08);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.35, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+    o.connect(g).connect(this.oasis);
+    o.start(t);
+    o.stop(t + 0.16);
+  }
+
+  // tipo: "mar" | "oasis" | null (sin agua en el nivel); cercania 0..1 (1 = dentro o en la orilla)
+  ajustarAgua(tipo, cercania) {
+    if (!this.mar) return;
+    const t = this.ctx.currentTime;
+    const c = Math.max(0, Math.min(1, cercania));
+    // en la isla el mar rodea todo: nunca se calla del todo, y se oye mas fuerte en la orilla
+    this.mar.gain.setTargetAtTime(tipo === "mar" ? 0.45 + c * 0.75 : 0, t, 0.4);
+    this.volOasis = tipo === "oasis" ? c : 0;
+    this.oasis.gain.setTargetAtTime(tipo === "oasis" ? c * c * 2.2 : 0, t, 0.3);
+  }
+
+  // salpicadura al entrar o salir del agua
+  chapoteo(fuerza = 1) {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    const src = this.fuente(this.ruidoBlanco, false);
+    const f = ctx.createBiquadFilter();
+    f.type = "bandpass";
+    f.frequency.setValueAtTime(2800, t);
+    f.frequency.exponentialRampToValueAtTime(500, t + 0.45);
+    f.Q.value = 0.7;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.9 * fuerza, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+    src.connect(f).connect(g).connect(this.maestro);
+    src.start(t, Math.random(), 0.55);
+    this.golpeRuido(0.25, 300, 0.6 * fuerza);
+    for (let i = 0; i < 3; i++) setTimeout(() => this.gotaSuelta(), 120 + i * 90 + Math.random() * 80);
+  }
+
+  gotaSuelta() {
+    if (!this.ctx) return;
+    const o = this.ctx.createOscillator();
+    const t = this.ctx.currentTime;
+    o.frequency.setValueAtTime(1000 + Math.random() * 1200, t);
+    o.frequency.exponentialRampToValueAtTime(2600, t + 0.07);
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.18, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+    o.connect(g).connect(this.maestro);
+    o.start(t);
+    o.stop(t + 0.12);
+  }
+
+  // brazada al nadar: agua que se abre y burbujas
+  brazada() {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    const src = this.fuente(this.ruidoBlanco, false);
+    const f = ctx.createBiquadFilter();
+    f.type = "bandpass";
+    f.frequency.setValueAtTime(700, t);
+    f.frequency.exponentialRampToValueAtTime(1800, t + 0.3);
+    f.Q.value = 0.8;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.35, t + 0.08);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
+    src.connect(f).connect(g).connect(this.maestro);
+    src.start(t, Math.random(), 0.42);
+    setTimeout(() => this.gotaSuelta(), 150 + Math.random() * 150);
   }
 
   crearViento() {
@@ -97,9 +236,6 @@ export class Sonido {
     this.volFuego = 0;
 
     // ruido blanco para los chasquidos y el siseo (el ruido marron del resto es demasiado grave)
-    this.ruidoBlanco = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
-    const datos = this.ruidoBlanco.getChannelData(0);
-    for (let i = 0; i < datos.length; i++) datos[i] = Math.random() * 2 - 1;
 
     // rugido: ruido grave que sube y baja como el tiro de las llamas
     const rugido = this.fuente(this.ruido);
@@ -177,9 +313,9 @@ export class Sonido {
   // distancia: metros al fuego mas cercano (ya compensada por su tamano: una antorcha se oye menos)
   ajustarFuego(distancia) {
     if (!this.fuego) return;
-    const v = Math.max(0, 1 - distancia / 16);
+    const v = Math.max(0, 1 - distancia / 22);   // se oye desde unos 22 m
     this.volFuego = v;
-    this.fuego.gain.setTargetAtTime(v * v * 1.1, this.ctx.currentTime, 0.2);
+    this.fuego.gain.setTargetAtTime(v * v * 1.8, this.ctx.currentTime, 0.2);
   }
 
   // Musica ambiental: acordes lentos (La menor - Fa - Do - Sol) + arpegio suave
