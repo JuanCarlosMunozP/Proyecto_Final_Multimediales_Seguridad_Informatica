@@ -1,0 +1,116 @@
+/* =====================================================================
+   RESPONSIVO: computador (base en style.css), tablet / movil (html.tactil)
+   y Raspberry Pi / equipos modestos (html.calidad-baja).
+   Las clases las pone dispositivo.js en <html>.
+   ===================================================================== */
+
+/* Margenes seguros (notch y esquinas redondeadas) */
+:root {
+  --seg-izq: env(safe-area-inset-left, 0px);
+  --seg-der: env(safe-area-inset-right, 0px);
+  --seg-sup: env(safe-area-inset-top, 0px);
+  --seg-inf: env(safe-area-inset-bottom, 0px);
+}
+#panel { top: calc(16px + var(--seg-sup)); left: calc(16px + var(--seg-izq)); max-width: calc(100vw - 32px); }
+#pantalla { overflow-y: auto; touch-action: pan-y; padding-left: max(7vw, var(--seg-izq)); }
+#caja { max-width: min(460px, 100%); padding: 16px 0; margin: auto 0; }
+#cuenta, .cuenta-caja { touch-action: pan-y; }
+#ayuda-tactil, #girar { display: none; }
+
+/* Pantallas grandes (monitor o TV a 1080p o mas): letra un poco mayor */
+@media (min-width: 1500px) {
+  #panel { width: 290px; font-size: 16px; }
+  #controles { font-size: 14px; }
+  #mensaje { font-size: 20px; }
+}
+
+/* Pantallas bajas: portatiles pequeños, Raspberry a 1366x768 o 1280x720, movil en horizontal */
+@media (max-height: 640px) {
+  #panel { top: calc(8px + var(--seg-sup)); left: calc(8px + var(--seg-izq)); width: 210px; padding: 8px 10px; font-size: 12px; }
+  .fila { margin: 4px 0; }
+  #objetivos { font-size: 11.5px; line-height: 1.45; }
+  #pista { margin-top: 4px; font-size: 11px; }
+  #mensaje { top: 10%; font-size: 14px; padding: 7px 16px; }
+  #controles { bottom: 8px; font-size: 11px; padding: 5px 12px; }
+  #pantalla-titulo { font-size: clamp(30px, 9vh, 56px); margin-bottom: 8px; }
+  #pantalla-texto { font-size: 14px; line-height: 1.4; margin: 6px 0; }
+  #btn-jugar { padding: 10px 32px; font-size: 16px; }
+  #ayuda { margin-top: 12px; line-height: 1.6; }
+  #dialogo { bottom: 4% !important; font-size: 14px !important; padding: 10px 14px !important; }
+}
+
+/* Anchos de telefono */
+@media (max-width: 600px) {
+  #panel { width: min(210px, 56vw); }
+  #pantalla { padding: 0 max(5vw, var(--seg-izq)); align-items: flex-start; }
+  #caja { margin: 0; padding-top: 6vh; max-width: 100%; }
+  #pantalla-texto { font-size: 14px; }
+  #btn-jugar { width: 100%; padding: 15px 20px; }
+  .cuenta-caja { padding: 18px 16px; max-height: 94dvh; overflow-y: auto; }
+}
+
+/* ---------- Tactil ---------- */
+html.tactil #controles, html.tactil #ayuda { display: none; }
+html.tactil #ayuda-tactil { display: block; margin-top: 18px; font-size: 12.5px; line-height: 1.8; color: rgba(255, 255, 255, 0.85); }
+html.tactil #ayuda-tactil b { color: #ffc27a; }
+html.tactil #panel { width: min(230px, 40vw); }
+html.tactil #btn-jugar, html.tactil .cuenta-principal, html.tactil .cuenta-invitado,
+html.tactil .cuenta-pestanas button { min-height: 48px; }              /* dedo: objetivo tactil de 48 px */
+html.tactil .cuenta-caja input { min-height: 46px; font-size: 16px; }   /* 16 px evita el zoom automatico de iOS */
+html.tactil #cuenta-info button { min-height: 40px; padding: 8px 16px; }
+html.tactil #dialogo { cursor: pointer; bottom: calc(4% + var(--seg-inf)) !important; width: min(720px, 60vw) !important; }
+html.tactil #mensaje { max-width: 80vw; }
+
+/* Aviso al estar en vertical */
+@media (orientation: portrait) {
+  html.tactil #girar {
+    display: block; position: fixed; top: calc(6px + var(--seg-sup)); left: 50%; transform: translateX(-50%);
+    z-index: 6; padding: 6px 14px; border-radius: 16px; font-size: 12px; white-space: nowrap;
+    background: rgba(22, 14, 18, 0.85); color: #ffd98a; pointer-events: none;
+  }
+  html.tactil #panel { top: calc(40px + var(--seg-sup)); }
+  html.tactil #dialogo { width: 92vw !important; bottom: 30% !important; }
+}
+
+/* Controles en pantalla (tactil.js) */
+.controles-tactiles { position: fixed; inset: 0; z-index: 3; pointer-events: none; }
+.tactil-zona { position: absolute; inset: 0; pointer-events: auto; touch-action: none; }
+.tactil-base {
+  position: absolute; width: 124px; height: 124px; margin: -62px 0 0 -62px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12); border: 2px solid rgba(255, 220, 160, 0.45); pointer-events: none;
+}
+.tactil-perilla {
+  position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 194, 122, 0.75); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+.tactil-boton {
+  position: absolute; pointer-events: auto; touch-action: none; cursor: pointer;
+  width: 78px; height: 78px; border-radius: 50%; border: 2px solid rgba(255, 220, 160, 0.6);
+  background: rgba(22, 14, 18, 0.62); color: #ffd98a; font: 700 11.5px/1 "Segoe UI", Arial, sans-serif;
+  letter-spacing: 0.04em;
+}
+.tactil-boton.pulsado { background: rgba(255, 194, 122, 0.8); color: #2a1204; transform: scale(0.94); }
+.tactil-golpe { right: calc(26px + var(--seg-der)); bottom: calc(30px + var(--seg-inf)); width: 92px; height: 92px; }
+.tactil-salto { right: calc(128px + var(--seg-der)); bottom: calc(24px + var(--seg-inf)); }
+.tactil-hablar { right: calc(36px + var(--seg-der)); bottom: calc(138px + var(--seg-inf)); width: 84px; height: 84px; color: #9fd0ff; }
+.tactil-pausa {
+  position: absolute; pointer-events: auto; top: calc(10px + var(--seg-sup)); right: calc(12px + var(--seg-der));
+  width: 46px; height: 46px; border-radius: 12px; border: 1px solid rgba(255, 190, 110, 0.4);
+  background: rgba(22, 14, 18, 0.7); color: #ffc27a; font: 700 15px/1 "Segoe UI", Arial, sans-serif; cursor: pointer;
+}
+@media (max-height: 420px) {                                   /* movil horizontal: botones algo menores */
+  .tactil-boton { width: 64px; height: 64px; font-size: 10px; }
+  .tactil-golpe { width: 76px; height: 76px; bottom: calc(18px + var(--seg-inf)); }
+  .tactil-salto { right: calc(112px + var(--seg-der)); bottom: calc(14px + var(--seg-inf)); }
+  .tactil-hablar { bottom: calc(100px + var(--seg-inf)); }
+}
+
+/* ---------- Raspberry / calidad baja: sin desenfoques ni efectos de interfaz costosos ---------- */
+html.calidad-baja *, html.calidad-baja *::before, html.calidad-baja *::after {
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+}
+html.calidad-baja #pantalla { background: rgba(14, 6, 16, 0.85); }
+html.calidad-baja #cuenta { background: rgba(14, 6, 16, 0.92); }
+html.calidad-baja #vineta { display: none; }
+html.calidad-baja #btn-jugar { box-shadow: none; }

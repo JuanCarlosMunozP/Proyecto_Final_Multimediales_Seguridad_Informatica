@@ -1,0 +1,163 @@
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;            /* sin "tirar para refrescar" ni rebote en el movil */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  touch-action: none;
+  background: #1a1020;
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #fff;
+  user-select: none;
+}
+
+canvas { display: block; }
+.oculta { display: none !important; }
+
+/* Oscurece los bordes de la pantalla (ambiente de atardecer) */
+#vineta {
+  position: fixed; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(20, 8, 20, 0.55) 100%);
+}
+
+/* Destello rojo al recibir dano */
+#dano {
+  position: fixed; inset: 0; pointer-events: none; opacity: 0;
+  transition: opacity 0.25s;
+  background: radial-gradient(ellipse at center, transparent 35%, rgba(200, 0, 0, 0.55) 100%);
+}
+
+/* ---------- HUD ---------- */
+#panel {
+  position: fixed; top: 16px; left: 16px; width: 250px;
+  padding: 12px 14px; border-radius: 10px;
+  background: rgba(22, 14, 18, 0.82);          /* opaco para que el texto se lea sobre la nieve */
+  border: 1px solid rgba(255, 190, 110, 0.25);
+  backdrop-filter: blur(4px);
+  font-size: 14px;
+}
+.fila { display: flex; align-items: center; justify-content: space-between; margin: 6px 0; }
+.etiqueta { font-size: 11px; letter-spacing: 0.12em; color: #f0b878; }
+#vida {
+  flex: 1; height: 12px; margin-left: 12px; border-radius: 6px;
+  background: rgba(255, 255, 255, 0.14); overflow: hidden;
+}
+#barra-vida {
+  height: 100%; width: 100%; border-radius: 6px;
+  background: linear-gradient(90deg, #5fcf6a, #a7e86f);
+  transition: width 0.15s;
+}
+#barra-vida.baja { background: linear-gradient(90deg, #d33, #f77); }
+.barra {
+  flex: 1; height: 12px; margin-left: 12px; border-radius: 6px;
+  background: rgba(255, 255, 255, 0.14); overflow: hidden;
+}
+#barra-frio, #barra-calor { height: 100%; border-radius: 6px; transition: width 0.15s; }
+#barra-frio { background: linear-gradient(90deg, #5fb4ff, #bfe6ff); }
+#barra-calor { background: linear-gradient(90deg, #ff8a2b, #ffd25f); }
+#barra-frio.critico { background: linear-gradient(90deg, #7a8cff, #fff); }
+#objetivos { margin-top: 6px; font-size: 13px; line-height: 1.6; }
+#objetivos .ok { color: #9be58a; text-decoration: line-through; opacity: 0.85; }
+#pista { margin-top: 8px; font-size: 12px; color: #ffd98a; opacity: 0.9; }
+
+#mensaje {
+  position: fixed; top: 18%; left: 50%; transform: translateX(-50%);
+  padding: 10px 22px; border-radius: 30px;
+  background: rgba(22, 14, 18, 0.85); border: 1px solid rgba(255, 190, 110, 0.35);
+  font-size: 17px; opacity: 0; transition: opacity 0.4s; pointer-events: none;
+  text-align: center;
+}
+#mensaje.visible { opacity: 1; }
+
+#controles {
+  position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+  font-size: 12px; color: rgba(255, 255, 255, 0.75);
+  background: rgba(22, 14, 18, 0.75); padding: 7px 16px; border-radius: 20px;
+  white-space: nowrap;
+}
+#controles b { color: #ffc27a; }
+
+/* ---------- Pantalla de inicio ---------- */
+#pantalla {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: flex-start;
+  padding-left: 7vw;
+  background: linear-gradient(90deg, rgba(14, 6, 16, 0.88) 0%, rgba(14, 6, 16, 0.55) 45%, rgba(14, 6, 16, 0.3) 100%);
+  z-index: 10;                      /* por encima del dialogo, los subtitulos y el HUD (z-index 4) */
+  backdrop-filter: blur(5px);       /* lo que queda detras se ve difuminado */
+}
+#caja { max-width: 460px; }
+#subtitulo { margin: 0 0 6px; font-size: 12px; letter-spacing: 0.3em; color: #f0b878; }
+#pantalla-titulo {
+  margin: 0 0 14px; font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(42px, 7vw, 76px); line-height: 1; letter-spacing: 0.04em;
+  text-shadow: 0 4px 24px rgba(255, 120, 30, 0.45);
+}
+#pantalla-titulo span {
+  font-size: 0.42em; font-style: italic; color: #ffb35c; letter-spacing: 0.08em;
+}
+#pantalla-texto { font-size: 16px; line-height: 1.55; color: rgba(255, 255, 255, 0.88); }
+#btn-jugar {
+  margin-top: 10px; padding: 14px 44px; font-size: 18px; letter-spacing: 0.12em;
+  color: #2a1204; background: linear-gradient(180deg, #ffc46b, #f28a2e);
+  border: none; border-radius: 6px; cursor: pointer; font-weight: 700;
+  box-shadow: 0 6px 24px rgba(255, 130, 30, 0.4); transition: transform 0.15s, filter 0.15s;
+}
+#btn-jugar:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.08); }
+#btn-jugar:disabled { opacity: 0.55; cursor: wait; }
+#ayuda { margin-top: 28px; font-size: 12px; line-height: 1.9; color: rgba(255, 255, 255, 0.8); }
+#ayuda b { color: #ffc27a; }
+
+@media (max-width: 800px) {
+  #controles { display: none; }
+  #pantalla { padding: 0 6vw; background: rgba(14, 6, 16, 0.7); }
+}
+
+/* ---------- Inicio de sesion (cuenta/pantalla.js) ---------- */
+#cuenta {
+  position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center;
+  background: rgba(14, 6, 16, 0.82); backdrop-filter: blur(8px);
+}
+.cuenta-caja {
+  width: min(380px, 90vw); padding: 26px 28px; border-radius: 14px; color: #f3e8dc;
+  background: rgba(22, 14, 18, 0.92); border: 1px solid rgba(255, 190, 110, 0.4);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.cuenta-caja h2 { margin: 0 0 14px; font-family: Georgia, "Times New Roman", serif; color: #ffb35c; letter-spacing: 0.04em; }
+.cuenta-pestanas { display: flex; gap: 6px; margin-bottom: 14px; }
+.cuenta-pestanas button {
+  flex: 1; padding: 8px; border: 1px solid rgba(255, 190, 110, 0.35); border-radius: 6px;
+  background: transparent; color: #f3e8dc; cursor: pointer; font: inherit;
+}
+.cuenta-pestanas button.activa { background: #ffc27a; color: #2a1204; font-weight: 700; }
+.cuenta-caja form { display: flex; flex-direction: column; gap: 10px; }
+.cuenta-caja input {
+  padding: 10px 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.35); color: #fff; font: inherit; font-size: 15px;
+}
+.cuenta-caja input:focus { outline: 2px solid #ffc27a; border-color: transparent; }
+.cuenta-mensaje { min-height: 18px; margin: 0; font-size: 13px; color: #ff9d8a; }
+.cuenta-principal {
+  padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 15px;
+  color: #2a1204; background: linear-gradient(180deg, #ffc46b, #f28a2e);
+}
+.cuenta-principal:disabled { opacity: 0.55; cursor: wait; }
+.cuenta-invitado {
+  width: 100%; margin-top: 12px; padding: 9px; border-radius: 6px; cursor: pointer; font: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.25); background: transparent; color: rgba(255, 255, 255, 0.8);
+}
+.cuenta-nota { margin: 12px 0 0; font-size: 11.5px; line-height: 1.5; color: rgba(255, 255, 255, 0.55); }
+#cuenta-info { margin: 0 0 12px; font-size: 13px; color: #ffd98a; }
+#cuenta-info button {
+  margin-left: 6px; padding: 5px 12px; min-height: 24px; border-radius: 12px; cursor: pointer; font: inherit; font-size: 12px;
+  border: 1px solid rgba(255, 190, 110, 0.5); background: transparent; color: #ffc27a;
+}
+.cuenta-aviso { display: block; margin-top: 4px; color: #ff9d8a; }
+
+/* Quien pide menos movimiento en su sistema: sin transiciones ni destellos suaves */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+.solo-lectores { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
