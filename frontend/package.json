@@ -1,17 +1,19 @@
-﻿{
-    "name":  "axel-la-isla-perdida",
-    "version":  "0.0.0",
-    "private":  true,
-    "type":  "module",
-    "scripts":  {
-                    "dev":  "vite",
-                    "build":  "vite build",
-                    "preview":  "vite preview"
-                },
-    "devDependencies":  {
-                            "vite":  "^8.3.5"
-                        },
-    "dependencies":  {
-                         "three":  "^0.186.1"
-                     }
+{
+    "name": "axel-la-isla-perdida",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
+        "test": "vitest run"
+    },
+    "devDependencies": {
+        "vite": "^8.3.5",
+        "vitest": "^5.1.0"
+    },
+    "dependencies": {
+        "three": "^0.186.1"
+    }
 }
