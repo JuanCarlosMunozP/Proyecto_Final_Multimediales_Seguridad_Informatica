@@ -1,3 +1,3 @@
-# aqui ira el backend 
+# Módulo principal del backend
 
-# preparando para el pull request
+# Cambios listos para revisión
