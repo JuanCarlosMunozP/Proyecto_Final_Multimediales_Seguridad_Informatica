@@ -43,6 +43,16 @@ export function dispararJugador(ctx) {
   vista.sacudida = 0.08;
 
   let blanco = null, mejor = ALCANCE_PISTOLA;
+  const obstaculos = (ctx.mundo ?? enemigos[0]?.mundo)?.obstaculos || [];
+  for (const o of obstaculos) {
+    const dx = o.x - jugador.pos.x, dz = o.z - jugador.pos.z;
+    const largo = dx * fx + dz * fz;
+    const lateral = Math.abs(dx * fz - dz * fx);
+    if (lateral < o.r) {
+      const borde = largo - Math.sqrt(o.r * o.r - lateral * lateral);
+      if (largo > 0 && borde < mejor) mejor = Math.max(0, borde);
+    }
+  }
   for (const e of enemigos) {
     if (!e.vivo) continue;
     const dx = e.pos.x - jugador.pos.x, dz = e.pos.z - jugador.pos.z;

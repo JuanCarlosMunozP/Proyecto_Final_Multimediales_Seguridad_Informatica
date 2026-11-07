@@ -45,6 +45,7 @@ ajustarCamara();
 // ============================================================
 let nivel = 0;
 let cambiandoNivel = false;
+let solicitudNivel = 0;
 let metaLista = false;                // objetivos completos: el bote ya esta en el mar
 let avisoMar = 0;
 let avisoFrio = 0;
@@ -60,6 +61,8 @@ const sonido = new Sonido();
 const gltfLoader = new GLTFLoader();
 
 let estado = "cargando";     // cargando | inicio | jugando | pausa | victoria | derrota
+const esTerminal = () => estado === "victoria" || estado === "derrota";
+const nivelVigente = (id) => id === solicitudNivel && jugador.vivo && !esTerminal();
 let mundo, axel, daniel;
 const enemigos = [];
 let modeloEnemigo;
@@ -183,6 +186,7 @@ window.visualViewport?.addEventListener("resize", ajustarCamara);
 // ============================================================
 // 5. CARGA DE MODELOS (hechos en Blender)
 // ============================================================
+const esModoDev = import.meta.env.DEV;
 async function iniciar() {
   // La misma base de Mixamo conserva las proporciones; cada mercenario recibe rasgos propios.
   const gAxel = await gltfLoader.loadAsync("/models/daniel.glb?v=" + Date.now());
@@ -197,11 +201,11 @@ async function iniciar() {
   axel.grupo.rotation.y = Math.PI;
 
   await cuenta.sesion();                       // inicio de sesion (o invitado) antes de elegir el nivel
-  const inicial = import.meta.env.DEV && /nivel=(\d)/.exec(location.hash);   // #demo&nivel=1 salta a otro bioma (solo en desarrollo)
+  const inicial = esModoDev && /nivel=(\d)/.exec(location.hash);   // #demo&nivel=1 salta a otro bioma (solo en desarrollo)
   await empezarNivel(inicial ? Math.min(+inicial[1], NIVELES.length - 1) : cuenta.nivelGuardado());
 
   // Modo de prueba: index.html#demo  o  index.html#demo=x,z (empieza sin pulsar "Jugar")
-  if (import.meta.env.DEV && location.hash.startsWith("#demo")) {
+  if (esModoDev && location.hash.startsWith("#demo")) {
     const [dx, dz, dyaw] = (location.hash.split("=")[1] || "").split(",").map(Number);
     if (!Number.isNaN(dx) && !Number.isNaN(dz)) jugador.pos.set(dx, mundo.altura(dx, dz), dz);
     if (!Number.isNaN(dyaw)) vista.yaw = dyaw;   // 3.14 = camara de frente a Axel
@@ -224,19 +228,31 @@ async function iniciar() {
 // ============================================================
 // Cada nivel descarta los objetos del mundo anterior y construye una isla nueva con su tema.
 async function cargarMundo(n) {
-  if (mundo) liberar(scene, mundo.objetos);
   const antes = new Set(scene.children);
   const nuevo = await crearMundo(scene, gltfLoader, TEMAS[n]);
   nuevo.objetos = scene.children.filter((o) => !antes.has(o));
-  mundo = nuevo;
+  return nuevo;
 }
 
 async function empezarNivel(n) {
+  if (!jugador.vivo || (typeof esTerminal === "function" ? esTerminal() : (estado === "victoria" || estado === "derrota"))) return;
+  const req = typeof solicitudNivel === "number" ? ++solicitudNivel : 1;
+  const esVigente = () => typeof nivelVigente === "function"
+    ? nivelVigente(req)
+    : (jugador.vivo && estado !== "victoria" && estado !== "derrota");
   cambiandoNivel = true;
+  const def = NIVELES[n];
+  const nuevo = await cargarMundo(n);
+  await precalentar();
+  if (!esVigente()) {
+    if (nuevo?.objetos && typeof liberar === "function") liberar(scene, nuevo.objetos);
+    if (typeof solicitudNivel !== "number" || req === solicitudNivel) cambiandoNivel = false;
+    return;
+  }
+  if (nuevo && mundo && mundo !== nuevo && typeof liberar === "function") liberar(scene, mundo.objetos);
+  if (nuevo) mundo = nuevo;
   nivel = n;
   cuenta.guardarNivel(n);
-  const def = NIVELES[n];
-  await cargarMundo(n);
   Object.assign(obj, { idolos: 0, derrotados: 0, fogata: false, altar: false, nado: 0 });
   metaLista = false;
   jugador.vida = Math.max(jugador.vida, 60);
@@ -270,7 +286,6 @@ async function empezarNivel(n) {
   hud.filaFrio.classList.toggle("oculta", !frio.activo);
   hud.filaCalor.classList.toggle("oculta", !frio.activo);
   document.getElementById("nivel").textContent = `Nivel ${n + 1}/${NIVELES.length}: ${def.nombre}`;
-  await precalentar();
   cambiandoNivel = false;
 }
 
@@ -340,7 +355,13 @@ function revisarPortal() {
   cambiandoNivel = true;
   fundido.style.opacity = 1;
   setTimeout(async () => {
-    await empezarNivel(nivel + 1);
+    if (!jugador.vivo || (typeof esTerminal === "function" ? esTerminal() : (estado === "victoria" || estado === "derrota"))) {
+      cambiandoNivel = false;
+      return;
+    }
+    const anterior = nivel;
+    await empezarNivel(anterior + 1);
+    if (!jugador.vivo || (typeof esTerminal === "function" ? esTerminal() : (estado === "victoria" || estado === "derrota")) || nivel !== anterior + 1) return;
     decir(`${NIVELES[nivel].nombre}: reúne ${IDOLOS_POR_NIVEL} ídolos y cumple los objetivos.`, 6);
     fundido.style.opacity = 0;
   }, 700);
@@ -353,7 +374,7 @@ function atacar() {
   if (!jugador.vivo || jugador.golpeCooldown > 0 || jugador.nadando) return;
   if (jugador.arma?.tipo === "pistola") {      // con pistola dispara en vez de golpear
     jugador.golpeCooldown = 0.35;
-    dispararJugador({ axel, jugador, enemigos, sonido, vista, obj, scene });
+    dispararJugador({ axel, jugador, enemigos, sonido, vista, obj, scene, mundo });
     suministros.gastarBala(axel);
     return;
   }
@@ -367,7 +388,7 @@ function atacar() {
 // `mortal`: balazo en cabeza o pecho (mata al instante, aunque este invulnerable); `zona`: donde pego
 // `empuje`: hacia donde empuja el ataque (decide como cae); `herida`: { parte, lado } para la animacion de dolor
 function danar(cantidad, mortal = false, zona = "", empuje = null, herida = null) {
-  if (!jugador.vivo || (jugador.invulnerable > 0 && !mortal)) return;
+  if (!jugador.vivo || cambiandoNivel || dialogo || estado !== "jugando" || (jugador.invulnerable > 0 && !mortal)) return;
   if (zona) decir(`Disparo en ${zona}`, 2);
   jugador.vida = mortal ? 0 : Math.max(0, jugador.vida - cantidad);
   jugador.invulnerable = 0.6;
@@ -382,6 +403,7 @@ function danar(cantidad, mortal = false, zona = "", empuje = null, herida = null
 }
 
 function matarJugador(empuje) {
+  if (!jugador.vivo) return;
   jugador.vivo = false;
   axel.morir(undefined, empuje);
   sonido.derrota();
@@ -396,6 +418,8 @@ async function irACasa() {
   if (daniel) scene.remove(daniel.grupo);
   cajaDialogo.style.display = avisoHablar.style.display = "none";
   mundo.ocultarPortal();
+  jugador.pos.set(5000, 0, 5000 - 0.9);
+  axel.grupo.position.set(5000, 0, 5000);
   await montarEscenaFinal({ scene, gltfLoader, jugador, axel });
 }
 
@@ -588,10 +612,9 @@ function actualizarEntornoJugador(dt) {
   }
 
   suministros.actualizar(dt, tiempo, mundo, axel);   // botiquines y kits de arma
-  return dFuego;
 }
 
-function actualizarObjetivosJugador(dt, velocidadH, dFuego) {
+function actualizarObjetivosJugador(dt, velocidadH) {
   // ---- idolos
   let mas = Infinity;
   for (const id of mundo.idolos) {
@@ -609,7 +632,7 @@ function actualizarObjetivosJugador(dt, velocidadH, dFuego) {
   }
 
   // ---- objetivos sencillos: fogata, altar y nado
-  if (dFuego < 3.4) obj.fogata = true;
+  if (mundo.fogata && Math.hypot(jugador.pos.x - mundo.fogata.x, jugador.pos.z - mundo.fogata.z) < 3.4) obj.fogata = true;
   if (Math.hypot(jugador.pos.x - mundo.altar.x, jugador.pos.z - mundo.altar.z) < 4.2) obj.altar = true;
   if (jugador.nadando && mundo.agua.tipo === "oasis") obj.nado += velocidadH * dt;   // solo cuenta nadar en el oasis
 
@@ -666,8 +689,8 @@ function actualizarJugador(dt) {
   actualizarCombateJugador(dt);
   moverJugador(dt);
   const velocidadH = actualizarAnimacionJugador(dt);
-  const dFuego = actualizarEntornoJugador(dt);
-  actualizarObjetivosJugador(dt, velocidadH, dFuego);
+  actualizarEntornoJugador(dt);
+  actualizarObjetivosJugador(dt, velocidadH);
   actualizarIndicadoresJugador(dt);
   actualizarHudJugador();
 }
@@ -700,8 +723,10 @@ function animar() {
       for (const e of enemigos) humanosEnEscena.push(e.humano);
       if (daniel) humanosEnEscena.push(daniel);
       gestionarPersonajes(camera, humanosEnEscena, jugador.pos);
-      for (const e of enemigos) e.actualizar(dt, tiempo, jugador, danar, sonido);
-      separarEnemigos(enemigos, jugador, mundo);   // no se atraviesan entre si ni a Max
+      if (!dialogo && !cambiandoNivel) {
+        for (const e of enemigos) e.actualizar(dt, tiempo, jugador, danar, sonido);
+        separarEnemigos(enemigos, jugador, mundo);   // no se atraviesan entre si ni a Max
+      }
       for (let i = enemigos.length - 1; i >= 0; i--) {
         if (enemigos[i].quitar) {
           scene.remove(enemigos[i].humano.grupo);

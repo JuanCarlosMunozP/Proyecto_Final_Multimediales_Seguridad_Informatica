@@ -1,0 +1,9 @@
+[project]
+name = "idolo-perdido-backend"
+version = "1.0.0"
+description = "Backend Clean Architecture en FastAPI para La Búsqueda del Ídolo Perdido (Optimizado para Raspberry Pi y Pentesting)"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

@@ -4,8 +4,6 @@ const $ = (id) => document.getElementById(id);
 
 export const hud = {
   barraVida: $("barra-vida"),
-  idolos: $("idolos"),
-  enemigos: $("enemigos"),
   pista: $("pista"),
   mensaje: $("mensaje"),
   dano: $("dano"),
