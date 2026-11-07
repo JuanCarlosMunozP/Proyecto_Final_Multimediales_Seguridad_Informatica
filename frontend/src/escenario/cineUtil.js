@@ -20,6 +20,8 @@ export function crearParticulas(n, material) {
 
 // Subtitulos [[segundo, texto], ...] y la tecla para saltar. `cerrar()` quita todo y apaga el fundido.
 export function interfazCine(subtitulos) {
+  const ui = { saltar: false };
+  const alTocar = () => { ui.saltar = true; };
   const caja = document.createElement("div");
   caja.style.cssText = "position:fixed;left:50%;bottom:11%;transform:translateX(-50%);width:min(760px,88vw);" +
     "padding:12px 18px;border-radius:10px;background:rgba(0,0,0,.62);color:#f3e8dc;font-size:18px;" +
@@ -35,8 +37,6 @@ export function interfazCine(subtitulos) {
   }
   document.body.appendChild(aviso);
 
-  const ui = { saltar: false };
-  const alTocar = () => { ui.saltar = true; };
   const alSaltar = (e) => { if (["e", "enter", " "].includes(e.key.toLowerCase())) ui.saltar = true; };
   window.addEventListener("keydown", alSaltar);
 

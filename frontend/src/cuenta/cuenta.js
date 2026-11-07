@@ -1,17 +1,21 @@
-// Inicio de sesion con localStorage (sin servidor): registro, ingreso, progreso guardado y modo
-// invitado. Las reglas de proteccion estan explicadas en seguridad.js; aqui se aplican:
+// Inicio de sesion con dos modos explícitos (ARCH-DEPLOY-001):
+//   - modo "local" (por defecto): localStorage + Web Crypto API (sin servidor)
+//   - modo "server" (VITE_AUTH_MODE=server): API REST /api/v1 (FastAPI + PostgreSQL) sin fallback silencioso
+// Las reglas de proteccion estan explicadas en seguridad.js y apiCliente.js:
 //   - validacion de nombre y contraseña, mensajes de error que no revelan si el usuario existe
 //   - bloqueo temporal tras 3 intentos fallidos (se duplica la espera, tope de 5 minutos)
 //   - cada guardado vuelve a firmar los datos; si la firma no coincide, se restablecen
 // main.js solo usa: sesion(), nivelGuardado(), guardarNivel(n) y registrarVictoria(segundos).
 import * as seg from './seguridad.js';
 import * as alm from './almacen.js';
+import * as api from './apiCliente.js';
 
 const MIN_CLAVE = 6;
 const GRATIS = 3;                 // intentos fallidos antes de empezar a bloquear
 const DATOS_NUEVOS = () => ({ nivel: 0, mejorTiempo: null, victorias: 0 });
+const esModoServidor = () => api.modoCuentaActual() === api.MODOS_CUENTA.SERVER;
 
-let actual = null;                // { nombre, clave, datos } | { invitado: true } | null
+let actual = null;                // { nombre, clave?, remoto?, datos } | { invitado: true } | null
 let ui = null;                    // modulo de la pantalla (se carga en sesion())
 let cola = Promise.resolve();     // los guardados se hacen de uno en uno
 
@@ -32,9 +36,15 @@ function abrirSesion(registro, clave) {
 
 export async function registrar(nombre, password) {
   nombre = nombre.trim();
-  if (!seg.disponible()) return error("Este navegador no permite guardar cuentas seguras (hace falta https o localhost). Juega como invitado.");
   const problema = validar(nombre, password);
   if (problema) return error(problema);
+  if (esModoServidor()) {
+    const r = await api.registrarEnServidor(nombre, password);
+    if (!r.ok) return error(r.mensaje);
+    actual = { nombre: r.nombre, remoto: true, datos: { ...r.datos }, aviso: r.aviso };
+    return { ok: true };
+  }
+  if (!seg.disponible()) return error("Este navegador no permite guardar cuentas seguras (hace falta https o localhost). Juega como invitado.");
   const usuarios = alm.leerUsuarios();
   if (buscar(usuarios, nombre)) return error("Ese nombre ya está en uso.");
   const salUsuario = seg.salAleatoria();
@@ -48,6 +58,12 @@ export async function registrar(nombre, password) {
 
 export async function entrar(nombre, password) {
   nombre = nombre.trim();
+  if (esModoServidor()) {
+    const r = await api.entrarEnServidor(nombre, typeof password === "string" ? password : "");
+    if (!r.ok) return error(r.mensaje);
+    actual = { nombre: r.nombre, remoto: true, datos: { ...r.datos }, aviso: r.aviso };
+    return { ok: true };
+  }
   if (!seg.disponible()) return error("Este navegador no permite cuentas seguras. Juega como invitado.");
   const intentos = alm.leerIntentos();
   const marca = "u:" + alm.llave(nombre);
@@ -87,31 +103,43 @@ export function entrarComoInvitado() {
 }
 
 export function cerrarSesion() {
+  if (actual?.remoto) api.cerrarSesionEnServidor();
   actual = null;
   alm.borrarSesion();
 }
 
 // Guarda los datos de la cuenta abierta (nivel, mejor tiempo...) con firma nueva. No hace nada en invitado.
-function guardar(cambios) {
-  if (!actual?.clave) return;
+function guardar(cambios, metaRemota = {}) {
+  if (!actual?.clave && !actual?.remoto) return;
   const datos = { ...actual.datos, ...cambios };
   actual.datos = datos;
   cola = cola.then(async () => {
-    const usuarios = alm.leerUsuarios();
-    const registro = buscar(usuarios, actual.nombre);
-    if (!registro) return;
-    registro.datos = datos;
-    registro.firma = await seg.firmar(actual.clave, registro.nombre, datos);
-    alm.guardarUsuarios(usuarios);
+    if (actual?.remoto) {
+      const r = await api.actualizarProgresoEnServidor(metaRemota);
+      if (r.ok && actual) actual.datos = r.datos;
+    } else {
+      const usuarios = alm.leerUsuarios();
+      const registro = buscar(usuarios, actual.nombre);
+      if (!registro) return;
+      registro.datos = datos;
+      registro.firma = await seg.firmar(actual.clave, registro.nombre, datos);
+      alm.guardarUsuarios(usuarios);
+    }
     if (actual) ui?.mostrarInfo(actual, () => { cerrarSesion(); location.reload(); });
   }).catch(() => {});                          // si falla el guardado, el juego sigue igual
 }
 
-export const guardarNivel = (n) => guardar({ nivel: Math.max(0, Math.min(2, n | 0)) });
+export const guardarNivel = (n) => {
+  const nivelLimpio = Math.max(0, Math.min(2, n | 0));
+  guardar({ nivel: nivelLimpio }, { nivel: nivelLimpio });
+};
 export function registrarVictoria(segundos) {
   const t = Number.isFinite(segundos) && segundos >= 1 ? Math.min(Math.round(segundos), 86400) : null;
   const mejor = actual?.datos?.mejorTiempo ?? null;
-  guardar({ nivel: 0, victorias: (actual?.datos?.victorias ?? 0) + 1, mejorTiempo: t && (mejor === null || t < mejor) ? t : mejor });
+  guardar(
+    { nivel: 0, victorias: (actual?.datos?.victorias ?? 0) + 1, mejorTiempo: t && (mejor === null || t < mejor) ? t : mejor },
+    { nivel: 0, tiempoVictoria: t }
+  );
 }
 export const nivelGuardado = () => actual?.datos?.nivel ?? 0;
 export const usuario = () => actual;
@@ -121,13 +149,16 @@ export const usuario = () => actual;
 export async function sesion() {
   const guardada = alm.leerSesion();
   if (guardada?.invitado) actual = { invitado: true };
-  else if (typeof guardada?.nombre === "string" && typeof guardada?.clave === "string") {
+  else if (esModoServidor()) {
+    const r = await api.sesionEnServidor();
+    if (r.ok) actual = { nombre: r.nombre, remoto: true, datos: { ...r.datos }, aviso: r.aviso };
+  } else if (typeof guardada?.nombre === "string" && typeof guardada?.clave === "string") {
     const registro = buscar(alm.leerUsuarios(), guardada.nombre);
     if (registro && await seg.firmaValida(guardada.clave, registro.nombre, registro.datos, registro.firma)) abrirSesion(registro, guardada.clave);
     else alm.borrarSesion();
   }
   ui = await import('./pantalla.js');                  // la pantalla se carga aparte (el codigo de arriba no necesita DOM)
-  if (!actual) await ui.mostrarPantallaCuenta({ registrar, entrar, entrarComoInvitado, disponible: seg.disponible() });
+  if (!actual) await ui.mostrarPantallaCuenta({ registrar, entrar, entrarComoInvitado, disponible: esModoServidor() || seg.disponible() });
   ui.mostrarInfo(actual, () => { cerrarSesion(); location.reload(); });
   return actual;
 }
