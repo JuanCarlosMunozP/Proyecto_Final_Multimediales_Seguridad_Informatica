@@ -1,0 +1,38 @@
+# ARCH-DEPLOY-001 — Perfil de despliegue para Raspberry Pi (Linux ARM64 — Laboratorio de Seguridad)
+# Ejecutar con: docker compose -f compose.yaml -f compose.raspberry.yaml up -d --build
+
+services:
+  postgres:
+    platform: linux/arm64
+    command: >
+      postgres
+      -c shared_buffers=64MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=32MB
+      -c max_connections=25
+      -c synchronous_commit=on
+    mem_limit: 256m
+    cpus: 1.0
+
+  fastapi:
+    platform: linux/arm64
+    environment:
+      DEPLOY_TARGET: raspberry
+      ENVIRONMENT: lab
+      UVICORN_WORKERS: 1
+      # En Raspberry Pi 4/5 (4GB/8GB RAM), 32 MiB o 64 MiB por hash Argon2id evita OOM bajo pruebas
+      ARGON2_TIME_COST: ${ARGON2_TIME_COST:-2}
+      ARGON2_MEMORY_COST: ${ARGON2_MEMORY_COST:-32768}
+      ARGON2_PARALLELISM: ${ARGON2_PARALLELISM:-2}
+    mem_limit: 256m
+    cpus: 1.5
+
+  nginx:
+    platform: linux/arm64
+    ports:
+      - "${BIND_IP:-0.0.0.0}:${HTTP_PORT:-8080}:80"
+      - "${BIND_IP:-0.0.0.0}:${HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./deploy/certs/raspberry:/etc/nginx/certs
+    mem_limit: 128m
+    cpus: 0.5

@@ -83,14 +83,31 @@ export class Enemigo {
   // Mueve las balas y revisa si alcanzan a Max (cilindro de 0.4 m de radio y 1.8 m de alto, revisado
   // en varios puntos del tramo). El dano depende de la altura donde pega (ver zonaDeBala).
   actualizarBalas(dt, jugador, danar) {
+    const obstaculos = this.mundo.obstaculos || [];
     for (let i = this.balas.length - 1; i >= 0; i--) {
       const b = this.balas[i];
       previo.copy(b.mesh.position);
       b.mesh.position.addScaledVector(b.vel, dt);
       b.vida -= dt;
       let impacto = null;
+      let enObstaculo = false;
+      let tMax = 1;
+      const sx = b.mesh.position.x - previo.x, sz = b.mesh.position.z - previo.z;
+      const len2 = sx * sx + sz * sz;
+      for (let j = 0; j < obstaculos.length; j++) {
+        const o = obstaculos[j];
+        const t = len2 > 1e-8 ? Math.max(0, Math.min(1, ((o.x - previo.x) * sx + (o.z - previo.z) * sz) / len2)) : 0;
+        const cx = previo.x + sx * t - o.x, cz = previo.z + sz * t - o.z;
+        const cy = previo.y + (b.mesh.position.y - previo.y) * t;
+        if (cx * cx + cz * cz < o.r * o.r && cy <= this.mundo.altura(o.x, o.z) + Math.max(2.0, o.r * 2.2)) {
+          enObstaculo = true;
+          if (t < tMax) tMax = t;
+        }
+      }
       for (let k = 1; k <= 4 && jugador.vivo && !impacto; k++) {
-        punto.lerpVectors(previo, b.mesh.position, k / 4);
+        const tk = k / 4;
+        if (tk > tMax) break;
+        punto.lerpVectors(previo, b.mesh.position, tk);
         const y = punto.y - jugador.pos.y;
         const px = punto.x - jugador.pos.x, pz = punto.z - jugador.pos.z;
         if (y > 0 && y < 1.8 && Math.hypot(px, pz) < 0.4) {
@@ -103,7 +120,7 @@ export class Enemigo {
       if (golpea) {
         danar(impacto.dano ?? 0, !!impacto.mortal, impacto.zona, b.vel, impacto.herida);
       }
-      if (golpea || alSuelo || b.vida <= 0) {
+      if (golpea || enObstaculo || alSuelo || b.vida <= 0) {
         this.scene.remove(b.mesh);
         this.balas.splice(i, 1);
       }

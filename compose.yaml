@@ -1,0 +1,82 @@
+# ARCH-DEPLOY-001 — Definición base común de servicios Docker
+# Uso para Raspberry Pi (ARM64): docker compose -f compose.yaml -f compose.raspberry.yaml up -d --build
+# Uso para VPS (AMD64/ARM64):    docker compose -f compose.yaml -f compose.vps.yaml up -d --build
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-idolo_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD en .env}
+      POSTGRES_DB: ${POSTGRES_DB:-idolo_db}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend_net
+    # Prohibido publicar 5432 al host o red externa
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-idolo_user} -d ${POSTGRES_DB:-idolo_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  fastapi:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DEPLOY_TARGET: ${DEPLOY_TARGET:-raspberry}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-idolo_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-idolo_db}
+      SECRET_KEY: ${SECRET_KEY:?Defina SECRET_KEY en .env}
+      ADMIN_AUDIT_TOKEN: ${ADMIN_AUDIT_TOKEN:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      CSRF_PROTECTION_ENABLED: ${CSRF_PROTECTION_ENABLED:-true}
+      SESSION_TTL_SECONDS: ${SESSION_TTL_SECONDS:-28800}
+      ARGON2_TIME_COST: ${ARGON2_TIME_COST:-3}
+      ARGON2_MEMORY_COST: ${ARGON2_MEMORY_COST:-65536}
+      ARGON2_PARALLELISM: ${ARGON2_PARALLELISM:-2}
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-60}
+      AUTH_RATE_LIMIT_PER_MINUTE: ${AUTH_RATE_LIMIT_PER_MINUTE:-10}
+    networks:
+      - frontend_net
+      - backend_net
+    # Prohibido publicar 8000 al host; solo accesible desde nginx vía frontend_net
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  nginx:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_AUTH_MODE: ${VITE_AUTH_MODE:-server}
+    restart: unless-stopped
+    depends_on:
+      fastapi:
+        condition: service_healthy
+    environment:
+      TLS_DOMAIN: ${TLS_DOMAIN:-idolo-raspberry.local}
+    networks:
+      - frontend_net
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  frontend_net:
+    driver: bridge
+  backend_net:
+    driver: bridge
+    internal: true
+
+volumes:
+  pgdata:

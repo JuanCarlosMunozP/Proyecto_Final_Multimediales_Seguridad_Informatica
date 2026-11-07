@@ -36,9 +36,13 @@ const TRANSICIONES = Object.freeze({
 });
 
 export function transicionar(estado, evento, contexto = {}) {
-  const regla = TRANSICIONES[estado]?.[evento];
-
-  if (regla === undefined) {
+  // No coaccionar entradas ni resolver propiedades heredadas del prototipo.
+  if (
+    typeof estado !== 'string' ||
+    typeof evento !== 'string' ||
+    !Object.hasOwn(TRANSICIONES, estado) ||
+    !Object.hasOwn(TRANSICIONES[estado], evento)
+  ) {
     return {
       aceptada: false,
       estado,
@@ -46,6 +50,21 @@ export function transicionar(estado, evento, contexto = {}) {
     };
   }
 
+  if (
+    contexto === null ||
+    typeof contexto !== 'object' ||
+    Array.isArray(contexto) ||
+    (contexto.cineActivo !== undefined &&
+      typeof contexto.cineActivo !== 'boolean')
+  ) {
+    return {
+      aceptada: false,
+      estado,
+      motivo: 'CONTEXTO_INVALIDO',
+    };
+  }
+
+  const regla = TRANSICIONES[estado][evento];
   const destino =
     typeof regla === 'function' ? regla(contexto) : regla;
 
