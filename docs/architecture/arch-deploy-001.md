@@ -1,20 +1,20 @@
 # ARCH-DEPLOY-001 — Arquitectura Única Cliente-Servidor para Raspberry Pi (ARM64) y VPS (AMD64/ARM64)
 
 **Proyecto:** La Búsqueda del Ídolo Perdido
-**Estado:** Implementación Aislada Completada — Pendiente de Revisión Humana para Conexión con `cuenta.js`
+**Estado:** Integración cliente-servidor implementada
 **Rama / Commit base:** `dev/jesus` (`8bdba73`)
 
 ---
 
 ## 1. Arquitectura AS-IS y TO-BE
 
-### 1.1 Estado Actual Conservado (`AS-IS` — Modo `local`)
-- El videojuego 3D (`frontend/src/main.js`, escenas Three.js, misiones, controles y `frontend/src/cuenta/cuenta.js`) permanece **intacto** operando en modo `local` sobre `Web Crypto API` + `localStorage`.
+### 1.1 Estado Actual (`AS-IS` — Cliente-Servidor)
+- El videojuego 3D y sus escenas, misiones y controles permanecen en el frontend. Registro, autenticación, sesiones y progreso persistente son responsabilidad del backend.
 - La máquina de estados aislada (`game-state-machine.js`, `game-state-coordinator.js`, `game-state-adapters.js`) permanece **desacoplada** de `main.js`.
 
-### 1.2 Arquitectura Cliente-Servidor Portable (`TO-BE` Implementado en Aislamiento — Modo `server`)
+### 1.2 Arquitectura Cliente-Servidor Portable (Implementada)
 - Una **única base de código** desplegable tanto en **Raspberry Pi (`linux/arm64`)** como en **VPS (`linux/amd64` o `linux/arm64`)** mediante perfiles específicos de Docker Compose (`compose.yaml` + `compose.raspberry.yaml` / `compose.vps.yaml`).
-- **Sin fallback silencioso en modo `server`:** El cliente explícito [apiCliente.js](file:///c:/Estudio/Seguridad-Multimedia/frontend/src/cuenta/apiCliente.js) define `MODOS_CUENTA = { LOCAL: "local", SERVER: "server" }`. Cuando opera en modo `server`, jamás degrada silenciosamente a `localStorage` si la API falla.
+- **Sin fallback local:** [apiCliente.js](../../frontend/src/cuenta/apiCliente.js) solo utiliza la API `/api/v1`; si el backend falla, devuelve un error y no guarda credenciales ni progreso en el navegador.
 
 ---
 
@@ -150,10 +150,9 @@ docker compose -f compose.yaml -f compose.vps.yaml exec -T postgres \
 
 ---
 
-## 8. Dictamen `GO / NO-GO` para Conectar el Frontend (`cuenta.js`)
+## 8. Integración de cuenta cliente-servidor
 
-- **Dictamen para la Infraestructura y Backend Aislado (`ARCH-DEPLOY-001`):** **`GO TÉCNICO`**
-  - `docker compose config` validado con código de salida `0` tanto para `compose.yaml + compose.raspberry.yaml` como para `compose.yaml + compose.vps.yaml`.
-  - El adaptador explícito [apiCliente.js](file:///c:/Estudio/Seguridad-Multimedia/frontend/src/cuenta/apiCliente.js) (`local` vs. `server` sin fallback silencioso) y las pruebas de arquitectura ([arch-deploy-001.test.js](file:///c:/Estudio/Seguridad-Multimedia/frontend/tests/arch-deploy-001.test.js) y [security-account.test.js](file:///c:/Estudio/Seguridad-Multimedia/frontend/tests/security-account.test.js)) pasan al 100 %.
-- **Estado de `frontend/src/cuenta/cuenta.js` y `frontend/src/main.js`:** **INTACTOS (0 líneas modificadas respecto a `HEAD` para la conexión API)**, en cumplimiento estricto de la restricción: *"No modificar todavía cuenta.js ni main.js sin autorización específica"*.
-- **Integración autorizada en `cuenta.js`:** `frontend/src/cuenta/cuenta.js` está conectado con `frontend/src/cuenta/apiCliente.js` mediante selección explícita (`MODOS_CUENTA.LOCAL` por defecto; `MODOS_CUENTA.SERVER` cuando `VITE_AUTH_MODE=server`), sin fallback silencioso a `localStorage` en modo servidor (`TC-ARCH-005`).
+- Registro, inicio/cierre de sesión y consulta/actualización de progreso fluyen desde `frontend/src/cuenta/cuenta.js` por `apiCliente.js` a FastAPI.
+- El frontend no mantiene copias locales de contraseñas, cuentas, bloqueo por intentos ni progreso; si la API falla, informa el error sin fallback.
+- La interfaz conserva únicamente el estado necesario para mostrar al jugador y para el modo invitado; las sesiones y datos persistentes pertenecen al backend.
+- Las pruebas de integración de esta frontera están en `frontend/tests/account-api.test.js` y `frontend/tests/arch-deploy-001.test.js`.

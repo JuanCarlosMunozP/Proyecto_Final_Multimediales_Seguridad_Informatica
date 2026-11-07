@@ -40,7 +40,8 @@ class GameProgress:
         Aplica reglas de negocio y controles anti-cheat en el servidor:
         1. El nivel debe estar en el rango [1, 3].
         2. Un jugador no puede saltar del Nivel 1 directamente al Nivel 3 sin haber desbloqueado el Nivel 2.
-        3. Una victoria requiere un tiempo físicamente plausible (>= 5 s).
+        3. Una victoria requiere un tiempo físicamente plausible (>= 5 s) y reinicia
+           el nivel para la siguiente partida sin borrar récords ni victorias.
         """
         if requested_level is not None:
             if not isinstance(requested_level, int) or requested_level < MIN_LEVEL or requested_level > MAX_LEVEL:
@@ -62,5 +63,6 @@ class GameProgress:
             self.victories += 1
             if self.best_time_seconds == 0 or victory_seconds < self.best_time_seconds:
                 self.best_time_seconds = victory_seconds
+            self.current_level = MIN_LEVEL
 
         self.updated_at = datetime.now(timezone.utc)

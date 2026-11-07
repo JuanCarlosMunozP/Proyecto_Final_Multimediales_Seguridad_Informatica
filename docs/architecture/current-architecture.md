@@ -5,6 +5,8 @@
 **Estado:** Verificado contra código fuente (`dev/jesus` @ `8bdba73`)
 **Propósito:** Documentar con fidelidad forense la arquitectura real implementada (*AS-IS*), el inventario clasificado de componentes y los **8 diagramas arquitectónicos obligatorios**.
 
+> **Aviso de vigencia:** Este documento es una instantánea del análisis previo a la incorporación de `backend/` (base `8bdba73`, 2026-11-06); sus secciones sobre cuentas locales y ausencia de backend ya no describen el estado actual. Para la arquitectura cliente-servidor vigente, consultar [arch-deploy-001.md](arch-deploy-001.md).
+
 ---
 
 ## 1. Resumen Ejecutivo de la Arquitectura AS-IS

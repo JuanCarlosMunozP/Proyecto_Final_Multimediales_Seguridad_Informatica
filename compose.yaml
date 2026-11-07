@@ -58,8 +58,6 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-      args:
-        VITE_AUTH_MODE: ${VITE_AUTH_MODE:-server}
     restart: unless-stopped
     depends_on:
       fastapi:

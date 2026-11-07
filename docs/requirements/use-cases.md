@@ -14,12 +14,12 @@ La siguiente tabla distingue estrictamente las capacidades **IMPLEMENTADAS** en 
 
 | ID | Actor | Tipo | Clasificación Real | Responsabilidades Verificadas y Evidencia en Código |
 |---|---|---|---|---|
-| **ACT-001** | **Jugador** | Primario (Humano) | **IMPLEMENTADO** | • Crear cuenta local, iniciar sesión o jugar como invitado (`frontend/src/cuenta/pantalla.js:L11-L74`, `frontend/src/cuenta/cuenta.js:L33-L87`).<br>• Iniciar partida desde pantalla principal (`frontend/src/main.js:L153-L165`).<br>• Controlar a Max Montenegro con teclado/ratón o controles táctiles: desplazarse (`WASD`/joystick), correr (`Shift`), saltar (`Espacio`), nadar en mar y oasis (`frontend/src/main.js:L96-L118`, `:L441-L518`, `frontend/src/interfaz/tactil.js:L17-L122`).<br>• Interactuar con el NPC Daniel (`E` o botón táctil `HABLAR`) y recibir misiones (`frontend/src/main.js:L102-L103`, `:L299-L326`).<br>• Combatir mercenarios cuerpo a cuerpo o con armas de kits (`F`, clic izquierdo o botón táctil `GOLPEAR`/`DISPARAR`, `frontend/src/main.js:L101`, `:L352-L365`, `frontend/src/juego/combate.js:L21-L68`).<br>• Gestionar salud y recursos recogiendo botiquines (+40 vida) y kits de arma (`frontend/src/juego/suministros.js:L92-L117`), y calentarse junto a fogatas/antorchas en la montaña (`frontend/src/juego/frio.js:L18-L36`).<br>• Pausar y reanudar la partida (`Esc`, pérdida de puntero, cambio de pestaña o botón táctil `II`, `frontend/src/main.js:L126-L165`).<br>• Avanzar entre los 3 niveles a través del portal/vehículo y alcanzar la victoria o reiniciar tras derrota (`R` o botón final, `frontend/src/main.js:L104`, `:L329-L347`, `:L402-L413`). |
+| **ACT-001** | **Jugador** | Primario (Humano) | **IMPLEMENTADO** | • Crear cuenta e iniciar sesión con el backend o jugar como invitado (`frontend/src/cuenta/pantalla.js`, `frontend/src/cuenta/cuenta.js`, `backend/app/presentation/routers.py`).<br>• Iniciar partida desde pantalla principal (`frontend/src/main.js:L153-L165`).<br>• Controlar a Max Montenegro con teclado/ratón o controles táctiles: desplazarse (`WASD`/joystick), correr (`Shift`), saltar (`Espacio`), nadar en mar y oasis (`frontend/src/main.js:L96-L118`, `:L441-L518`, `frontend/src/interfaz/tactil.js:L17-L122`).<br>• Interactuar con el NPC Daniel (`E` o botón táctil `HABLAR`) y recibir misiones (`frontend/src/main.js:L102-L103`, `:L299-L326`).<br>• Combatir mercenarios cuerpo a cuerpo o con armas de kits (`F`, clic izquierdo o botón táctil `GOLPEAR`/`DISPARAR`, `frontend/src/main.js:L101`, `:L352-L365`, `frontend/src/juego/combate.js:L21-L68`).<br>• Gestionar salud y recursos recogiendo botiquines (+40 vida) y kits de arma (`frontend/src/juego/suministros.js:L92-L117`), y calentarse junto a fogatas/antorchas en la montaña (`frontend/src/juego/frio.js:L18-L36`).<br>• Pausar y reanudar la partida (`Esc`, pérdida de puntero, cambio de pestaña o botón táctil `II`, `frontend/src/main.js:L126-L165`).<br>• Avanzar entre los 3 niveles a través del portal/vehículo y alcanzar la victoria o reiniciar tras derrota (`R` o botón final, `frontend/src/main.js:L104`, `:L329-L347`, `:L402-L413`). |
 | **ACT-002** | **Sistema de Juego** | Secundario Lógico (Motor / Simulación) | **IMPLEMENTADO** | • Inicializar WebGLRenderer, cámara, iluminación ACES Filmic y resolución dinámica (`frontend/src/main.js:L28-L41`, `frontend/src/juego/detalle.js:L48-L76`).<br>• Cargar modelos GLB (`daniel.glb`, `idolo.glb`, `palmera.glb`) y precompilar shaders (`frontend/src/main.js:L186-L195`, `:L280-L286`).<br>• Generar proceduralmente los 3 biomas (isla, montaña nevada, desierto con oasis) con semilla determinista (`frontend/src/escenario/mundo.js:L16-L506`, `frontend/src/escenario/terreno.js:L14-L42`).<br>• Actualizar simulación por cuadro (`animar()`), IA de mercenarios, proyectiles, separación de cuerpos y colisiones circulares (`frontend/src/main.js:L680-L729`, `frontend/src/personajes/enemigo.js:L85-L271`).<br>• Evaluar condiciones de misión, daño por combate/frío, muerte diferida a 1500 ms y victoria (`frontend/src/main.js:L369-L413`, `:L575-L625`).<br>• Actualizar HUD con caché `WeakMap` y sintetizar audio procedural con Web Audio API (`frontend/src/main.js:L417-L428`, `frontend/src/audio/audio.js:L4-L464`). |
 | **ACT-003** | **NPC / Daniel** | Secundario (Personaje Narrativo) | **IMPLEMENTADO** | • Ubicarse junto al punto de aparición (`spawn`) de cada uno de los 3 niveles y actuar como obstáculo físico de radio `0.5 m` (`frontend/src/main.js:L255-L261`, `frontend/src/personajes/daniel.js:L4-L9`).<br>• Orientar su mirada suavemente hacia Max cuando está activo en escena (`frontend/src/main.js:L630`, `:L714`).<br>• Presentar los diálogos de historia por nivel (`GUIONES[nivel]`), disparar las 2 cinemáticas del Nivel 1 (`avion` y `playa`) y desbloquear las misiones del nivel al concluir el diálogo (`misionesAceptadas = true`, `frontend/src/main.js:L299-L326`, `frontend/src/juego/datos.js:L18-L43`).<br>• Mostrar recordatorio si el jugador vuelve a interactuar tras aceptar las misiones (`frontend/src/main.js:L301-L303`). |
 | **ACT-004** | **Administrador / Desarrollador** | Operación y Mantenimiento | **IMPLEMENTADO** (Herramientas locales y CLI) | • Ejecutar suite de pruebas automatizadas Vitest (`npm test`) y build de producción (`npm run build`, `frontend/package.json:L6-L11`).<br>• Inspeccionar niveles con cámara libre (`/niveles.html`, `frontend/src/herramientas/niveles.js:L1-L127`).<br>• Inspeccionar modelos, esqueletos y poses de personajes (`/visor.html`, `frontend/src/herramientas/visor.js:L1-L106`).<br>• Ejecutar pruebas funcionales en navegador (`/pruebas.html`, `frontend/src/herramientas/pruebas.js:L1-L271`).<br>• Medir telemetría de rendimiento WebGL: llamadas de dibujo, triángulos, sombras y tiempos de CPU/GPU por nivel (`/rendimiento.html`, `frontend/src/herramientas/rendimiento.js:L1-L107`).<br>• Utilizar atajos de desarrollo `#demo`, `#demo=x,z,yaw` y `#demo&nivel=N` restringidos por `import.meta.env.DEV` (`frontend/src/main.js:L200-L212`).<br>• Regenerar modelos 3D mediante scripts headless de Blender (`blender/crear_personajes.py`, `blender/convertir_mixamo.py`).<br>• *Nota:* No existe ni se requiere panel administrativo de servidor. |
-| **ACT-005** | **Servicio de Persistencia** | Técnico Externo (Web Storage API) | **IMPLEMENTADO** (Local en Navegador) | • Almacenar y validar cuentas locales en `localStorage` bajo la clave `ideolo:v1:cuentas` (`frontend/src/cuenta/almacen.js:L4`, `:L36-L41`).<br>• Persistir control de intentos fallidos y bloqueos en `localStorage` bajo `ideolo:v1:intentos` (`frontend/src/cuenta/almacen.js:L5`, `:L44-L48`).<br>• Persistir sesión activa por pestaña en `sessionStorage` bajo `ideolo:v1:sesion` (`frontend/src/cuenta/almacen.js:L6`, `:L50-L52`).<br>• Persistir preferencia de calidad gráfica en `localStorage` bajo `calidad` (`frontend/src/interfaz/dispositivo.js:L8-L13`).<br>• Validar esquemas, tipos, rangos y firma de integridad HMAC-SHA256 al recuperar datos (`frontend/src/cuenta/almacen.js:L14-L22`, `frontend/src/cuenta/cuenta.js:L73-L78`).<br>• *Nota:* No existe base de datos SQL/NoSQL en servidor (`AUSENTE`). |
-| **ACT-006** | **Servicio de Autenticación** | Técnico Condicional (Web Crypto API Local) | **PARCIAL** (Local en Cliente; sin Backend) | • Derivar verificador de contraseña (256 bits) y clave de firma HMAC (256 bits) mediante `SubtleCrypto` `PBKDF2-SHA256` con 150 000 iteraciones y sal aleatoria de 16 bytes (`frontend/src/cuenta/seguridad.js:L10-L25`).<br>• Comparar verificadores en tiempo constante (`iguales()`, `frontend/src/cuenta/seguridad.js:L28-L33`) y aplicar bloqueo exponencial tras 3 fallos (`frontend/src/cuenta/cuenta.js:L52-L68`).<br>• Firmar y verificar integridad del progreso con `HMAC-SHA256` (`frontend/src/cuenta/seguridad.js:L35-L47`).<br>• *Condición arquitectónica:* **No existe servicio de autenticación independiente en servidor (`AUSENTE`)**. En el diagrama AS-IS se modela como subsistema local dentro del navegador apoyado en `Web Crypto API`. |
+| **ACT-005** | **Servicio de Persistencia** | Técnico Externo (PostgreSQL) | **IMPLEMENTADO** (Backend) | • Persistir usuarios, progreso, sesiones y auditoría en PostgreSQL mediante repositorios del backend (`backend/app/infrastructure/models.py`, `backend/app/infrastructure/repositories.py`).<br>• Validar integridad del progreso y restablecer valores seguros si se detecta manipulación (`backend/app/application/use_cases.py`).<br>• Persistir preferencia de calidad gráfica en `localStorage` bajo `calidad` (`frontend/src/interfaz/dispositivo.js:L8-L13`).<br>• El frontend no guarda credenciales ni progreso en Web Storage. |
+| **ACT-006** | **Servicio de Autenticación** | Técnico Externo (FastAPI) | **IMPLEMENTADO** (Backend) | • Validar y almacenar contraseñas con Argon2id y limitar intentos fallidos con bloqueo gestionado por el backend (`backend/app/core/security.py`, `backend/app/application/use_cases.py`).<br>• Emitir sesiones opacas revocables en cookie HttpOnly y proteger escrituras mediante CSRF (`backend/app/presentation/routers.py`, `backend/app/presentation/dependencies.py`).<br>• Proveer registro, inicio/cierre de sesión y consulta de cuenta mediante la API `/api/v1` (`backend/app/presentation/routers.py`). |
 
 ---
 
@@ -49,51 +49,42 @@ La siguiente tabla distingue estrictamente las capacidades **IMPLEMENTADAS** en 
 ---
 
 ### CU-002 — Registrar usuario
-- **Actor principal:** Jugador (`ACT-001`), Servicio de Autenticación Local (`ACT-006`), Servicio de Persistencia (`ACT-005`).
-- **Estado de implementación:** **IMPLEMENTADO** (Autenticación y almacenamiento locales en navegador; sin servidor).
-- **Descripción:** Crea una nueva cuenta local validando formato de usuario y longitud de contraseña, derivando el verificador criptográfico y firmando el progreso inicial.
-- **Precondiciones:** Contexto seguro (`https` o `localhost`) con `crypto.subtle` disponible (`frontend/src/cuenta/seguridad.js:L13`).
+- **Actor principal:** Jugador (`ACT-001`), Servicio de Autenticación (`ACT-006`), Servicio de Persistencia (`ACT-005`).
+- **Estado de implementación:** **IMPLEMENTADO** (FastAPI y PostgreSQL).
+- **Descripción:** Registra una cuenta en el backend, almacena la contraseña con Argon2id y crea el progreso inicial y una sesión segura.
+- **Precondiciones:** API `/api/v1` disponible y base de datos migrada.
 - **Flujo principal:**
-  1. En el diálogo `#cuenta`, el jugador selecciona la pestaña `"Crear cuenta"` (`frontend/src/cuenta/pantalla.js:L20`, `:L34-L42`).
-  2. Introduce nombre de jugador, contraseña y confirmación de contraseña (`frontend/src/cuenta/pantalla.js:L15-L17`, `:L54`).
-  3. `registrar(nombre, password)` valida que `nombre` cumpla `/^[A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ _-]{3,16}$/` y `password` tenga entre 6 y 64 caracteres (`frontend/src/cuenta/cuenta.js:L21-L26`, `:L36-L37`).
-  4. Comprueba que el nombre normalizado (`llave(nombre)`) no exista ya en `localStorage` (`frontend/src/cuenta/cuenta.js:L38-L39`).
-  5. Genera una sal aleatoria de 16 bytes (`salAleatoria()`) y deriva 512 bits mediante `PBKDF2-SHA256` (150 000 iteraciones): 256 bits para `verificador` y 256 bits para `clave` (`frontend/src/cuenta/seguridad.js:L18-L25`, `frontend/src/cuenta/cuenta.js:L40-L41`).
-  6. Inicializa `datos = { nivel: 0, mejorTiempo: null, victorias: 0 }`, calcula la firma `HMAC-SHA256` y guarda el registro en `localStorage` (`frontend/src/cuenta/cuenta.js:L42-L44`).
-  7. Abre la sesión en memoria y en `sessionStorage`, limpia los campos de contraseña del DOM y cierra el modal (`frontend/src/cuenta/cuenta.js:L45`, `frontend/src/cuenta/pantalla.js:L59-L61`).
+  1. En el diálogo `#cuenta`, el jugador selecciona `"Crear cuenta"` e introduce nombre, contraseña y confirmación (`frontend/src/cuenta/pantalla.js`).
+  2. La interfaz comprueba que las contraseñas coincidan y envía `POST /api/v1/auth/register` a través de `frontend/src/cuenta/apiCliente.js`.
+  3. El backend valida nombre y contraseña, rechaza nombres duplicados y almacena el hash Argon2id, el progreso inicial y la sesión (`backend/app/application/use_cases.py`, `backend/app/presentation/routers.py`).
+  4. El backend responde con una cookie de sesión HttpOnly y un token CSRF; el frontend mantiene el progreso en memoria y limpia los campos de contraseña.
 - **Excepciones:**
-  - *EX-01 (`SubtleCrypto` no disponible):* Deshabilita inputs e invita a jugar como invitado (`frontend/src/cuenta/pantalla.js:L66-L69`).
-  - *EX-02 (Contraseñas no coinciden o formato inválido):* Muestra alerta accesible (`role="alert"`) sin exponer datos sensibles (`frontend/src/cuenta/pantalla.js:L54`, `frontend/src/cuenta/cuenta.js:L21-L25`).
-  - *EX-03 (Usuario duplicado):* Devuelve `"Ese nombre ya está en uso."` (`frontend/src/cuenta/cuenta.js:L39`).
-  - *EX-04 (`localStorage` bloqueado):* Devuelve error controlado si `guardarUsuarios` retorna `false` (`frontend/src/cuenta/cuenta.js:L44`).
-- **Postcondiciones:** Cuenta persistida sin contraseña en texto plano y sesión activa iniciada.
-- **Criterios de aceptación:** Contraseña nunca guardada en claro; rechazo de nombres con caracteres HTML (`<`, `>`); rechazo de duplicados insensible a mayúsculas/minúsculas.
-- **Evidencia de pruebas:** `TC-SEC-001`, `TC-SEC-002`, `TC-SEC-005`, `TC-SEC-006` en `frontend/tests/security-account.test.js`.
+  - *EX-01 (Credenciales inválidas o usuario duplicado):* El backend devuelve un error explícito y la interfaz lo presenta en la alerta accesible.
+  - *EX-02 (API no disponible):* La interfaz informa el fallo y no utiliza almacenamiento local como alternativa.
+- **Postcondiciones:** Cuenta persistida en el backend y sesión iniciada.
+- **Criterios de aceptación:** Las credenciales y el progreso no se guardan en Web Storage del navegador.
+- **Evidencia de pruebas:** `frontend/tests/account-api.test.js`, `frontend/tests/arch-deploy-001.test.js` y `backend/tests/test_clean_architecture_and_security.py`.
 
 ---
 
 ### CU-003 — Iniciar sesión
-- **Actor principal:** Jugador (`ACT-001`), Servicio de Autenticación Local (`ACT-006`), Servicio de Persistencia (`ACT-005`).
-- **Estado de implementación:** **IMPLEMENTADO** (Local).
-- **Descripción:** Verifica las credenciales de un jugador contra el registro local o permite ingresar en modo invitado.
-- **Precondiciones:** Modal de sesión activo o sesión previa en `sessionStorage`.
+- **Actor principal:** Jugador (`ACT-001`), Servicio de Autenticación (`ACT-006`), Servicio de Persistencia (`ACT-005`).
+- **Estado de implementación:** **IMPLEMENTADO** (FastAPI y PostgreSQL).
+- **Descripción:** Autentica al jugador en el backend o permite continuar como invitado sin persistir progreso.
+- **Precondiciones:** API `/api/v1` disponible para cuentas registradas.
 - **Flujo principal:**
-  1. El jugador introduce nombre y contraseña en modo `"Ingresar"` (`frontend/src/cuenta/pantalla.js:L52-L62`).
-  2. `entrar(nombre, password)` verifica en `ideolo:v1:intentos` si existe un bloqueo temporal activo para el usuario (`frontend/src/cuenta/cuenta.js:L52-L56`).
-  3. Busca el registro en `leerUsuarios()` y ejecuta `seg.derivar()` incluso si el usuario no existe (usando una sal aleatoria ficticia) para mitigar ataques de temporización (`frontend/src/cuenta/cuenta.js:L58-L61`).
-  4. Compara el verificador con `seg.iguales()` en tiempo constante (`frontend/src/cuenta/cuenta.js:L62`, `frontend/src/cuenta/seguridad.js:L28-L33`).
-  5. Limpia el contador de intentos fallidos (`frontend/src/cuenta/cuenta.js:L69-L70`).
-  6. Verifica la firma `HMAC-SHA256` del progreso guardado con la clave derivada (`frontend/src/cuenta/cuenta.js:L73`).
-  7. Abre sesión y muestra en el menú principal el resumen del jugador y botón `"Cerrar sesión"` (`frontend/src/cuenta/cuenta.js:L79-L81`, `frontend/src/cuenta/pantalla.js:L77-L85`).
+  1. El jugador introduce nombre y contraseña en el diálogo de ingreso (`frontend/src/cuenta/pantalla.js`).
+  2. El frontend envía `POST /api/v1/auth/login`; el backend comprueba el hash Argon2id y aplica el control de intentos fallidos.
+  3. El backend carga y valida la integridad del progreso, crea una sesión revocable y devuelve la cookie HttpOnly y el token CSRF.
+  4. El frontend muestra el resumen del jugador; al recargar, consulta `GET /api/v1/auth/me` y el navegador envía la cookie.
 - **Flujos alternativos:**
-  - *FA-01 (Modo Invitado):* El jugador pulsa `"Jugar como invitado (sin guardar)"`; se activa `{ invitado: true }` sin persistir progreso (`frontend/src/cuenta/cuenta.js:L84-L87`).
-  - *FA-02 (Recuperación automática de pestaña):* Al recargar la página, `sesion()` recupera `{ nombre, clave }` de `sessionStorage`, valida la firma HMAC y restaura la sesión sin pedir contraseña de nuevo (`frontend/src/cuenta/cuenta.js:L121-L128`).
+  - *FA-01 (Modo Invitado):* El jugador elige `"Jugar como invitado (sin guardar)"`; el estado es solo de interfaz y no se persiste.
 - **Excepciones:**
-  - *EX-01 (Credenciales inválidas o usuario inexistente):* Devuelve el mismo mensaje genérico `"Nombre o contraseña incorrectos."` e incrementa fallos; a partir del 3.º fallo aplica bloqueo exponencial $2^{n-3} \times 5\text{ s}$ hasta 300 s (`frontend/src/cuenta/cuenta.js:L62-L68`).
-  - *EX-02 (Datos adulterados en `localStorage`):* Si `firmaValida()` falla, restablece `datos` a valores iniciales, vuelve a firmar y muestra el aviso `"Los datos guardados de esta cuenta fueron modificados y se restablecieron."` (`frontend/src/cuenta/cuenta.js:L73-L78`).
-- **Postcondiciones:** Sesión autenticada localmente con progreso íntegro cargado.
-- **Criterios de aceptación:** Mensajes uniformes ante usuario inexistente/clave errónea, bloqueo tras 3 intentos y restablecimiento automático ante manipulación de `localStorage`.
-- **Evidencia de pruebas:** `TC-SEC-003`, `TC-SEC-004`, `TC-SEC-006`, `TC-SEC-007` en `frontend/tests/security-account.test.js`.
+  - *EX-01 (Credenciales inválidas o cuenta bloqueada):* El backend devuelve un error sin revelar si el nombre existe.
+  - *EX-02 (API no disponible):* Se informa el error; no se consulta ni se modifica almacenamiento local.
+- **Postcondiciones:** Sesión autenticada en el backend y progreso del jugador disponible en la interfaz.
+- **Criterios de aceptación:** Las sesiones y el bloqueo de cuentas son gestionados por el backend; no se conservan credenciales en el navegador.
+- **Evidencia de pruebas:** `frontend/tests/account-api.test.js` y `backend/tests/test_clean_architecture_and_security.py`.
 
 ---
 
@@ -290,7 +281,7 @@ La siguiente tabla distingue estrictamente las capacidades **IMPLEMENTADAS** en 
      - Reinicia contadores de objetivos `obj`, restaura vida mínima a `60`, limpia suministros y mercenarios anteriores e instancia los nuevos mercenarios y a Daniel junto al nuevo `spawn` (`:L240-L263`).
      - Posiciona a Max en el nuevo `spawn`, configura el sistema de frío/calor si el bioma es montaña y ejecuta `precalentar()` (`:L265-L274`).
   4. Desvanece el fundido a negro (`fundido.style.opacity = 0`) y anuncia el nuevo nivel (`frontend/src/main.js:L344-L345`).
-- **Postcondiciones:** Nuevo nivel cargado sin fugas de memoria WebGL y progreso actualizado en `localStorage`.
+- **Postcondiciones:** Nuevo nivel cargado sin fugas de memoria WebGL y progreso enviado al backend.
 - **Criterios de aceptación:** Ausencia de recursos mezclados entre biomas; liberación verificada de geometrías y texturas.
 - **Evidencia de pruebas:** Pruebas de los 3 mundos en `frontend/src/herramientas/pruebas.js:L68-L90`.
 
@@ -307,27 +298,28 @@ La siguiente tabla distingue estrictamente las capacidades **IMPLEMENTADAS** en 
   3. Invoca `irACasa()`, que oculta los objetos del desierto, retira mercenarios y a Daniel, y monta la cabaña interior en `CASA_POS = (5000, 0, 5000)` con Max descansando en su cama y el ídolo dorado iluminado en la repisa (`frontend/src/main.js:L392-L400`, `frontend/src/escenario/casa.js:L4-L85`).
   4. Invoca `cuenta.registrarVictoria(segundos)`, que reinicia el nivel guardado a `0`, incrementa `victorias` y actualiza `mejorTiempo` si es menor al anterior (`frontend/src/main.js:L410`, `frontend/src/cuenta/cuenta.js:L111-L115`).
   5. Muestra `pantallaFinal("victoria", segundos, 3)` con el título `"¡MISIÓN CUMPLIDA!"` y el tiempo total (`frontend/src/interfaz/hud.js:L74-L83`).
-- **Postcondiciones:** Estado terminal `"victoria"`, escena 3D de la cabaña con cámara orbital y estadísticas firmadas en `localStorage`.
+- **Postcondiciones:** Estado terminal `"victoria"`, escena 3D de la cabaña con cámara orbital y estadísticas actualizadas en el backend.
 - **Criterios de aceptación:** Victoria única e idempotente; cierre narrativo visual en la cabaña.
-- **Evidencia de pruebas:** `TC-SEC-007` (`frontend/tests/security-account.test.js`) y `frontend/tests/game-state.test.js`.
+- **Evidencia de pruebas:** `frontend/tests/account-api.test.js` y `frontend/tests/game-state.test.js`.
 
 ---
 
 ### CU-016 — Guardar y recuperar progreso
-- **Actor principal:** Jugador (`ACT-001`), Servicio de Persistencia (`ACT-005`), Servicio de Autenticación Local (`ACT-006`).
+- **Actor principal:** Jugador (`ACT-001`), Servicio de Persistencia (`ACT-005`), Servicio de Autenticación (`ACT-006`).
 - **Estado de implementación:** **IMPLEMENTADO** (Persistencia automática por nivel y al alcanzar victoria).
-- **Descripción:** Persistencia firmada criptográficamente del nivel actual, número de victorias y mejor tiempo de cada cuenta local, y restauración validada al iniciar sesión o recargar la pestaña.
-- **Precondiciones:** Jugador con sesión de cuenta activa (`!actual.invitado`).
+- **Descripción:** El backend valida y persiste el nivel actual, el número de victorias y el mejor tiempo; el progreso se recupera mediante la sesión autenticada.
+- **Precondiciones:** Jugador con sesión válida en el backend.
 - **Flujo principal:**
-  1. Al iniciar cada nivel (`empezarNivel(n)`) o al ganar (`registrarVictoria(segundos)`), `cuenta.js` encola la actualización en una promesa secuencial (`cola`, `frontend/src/cuenta/cuenta.js:L16`, `:L95-L108`).
-  2. Se calcula una nueva firma `HMAC-SHA256` sobre la cadena canónica `1|nombre|nivel|mejorTiempo|victorias` usando la clave derivada en memoria (`frontend/src/cuenta/seguridad.js:L36-L41`).
-  3. Se escribe el arreglo de usuarios en `localStorage` (`ideolo:v1:cuentas`, `frontend/src/cuenta/almacen.js:L41`).
-  4. Al recuperar (`leerUsuarios()` y `entrar()`/`sesion()`), `registroValido()` filtra cualquier registro con esquema/tipos/rangos inválidos y `firmaValida()` comprueba el HMAC (`frontend/src/cuenta/almacen.js:L14-L40`, `frontend/src/cuenta/cuenta.js:L73-L78`, `:L126`).
+  1. Al cambiar de nivel o ganar, `cuenta.js` encola las solicitudes para preservar el orden.
+  2. El cliente envía `PUT /api/v1/progress` con el cambio de nivel o tiempo de victoria y el token CSRF.
+  3. El backend aplica las reglas de progresión, actualiza el progreso y firma su integridad antes de persistirlo.
+  4. Al iniciar o recargar, `GET /api/v1/auth/me` recupera el progreso vinculado a la cookie de sesión.
 - **Excepciones:**
-  - *EX-01 (Manipulación manual de `localStorage` o JSON corrupto):* Los registros corruptos se descartan sin lanzar excepciones; si los datos de progreso fueron editados sin conocer la contraseña, la firma HMAC falla y los datos se restablecen de forma segura a `{ nivel: 0, mejorTiempo: null, victorias: 0 }`.
-- **Postcondiciones:** Progreso persistido y restaurado de forma íntegra.
-- **Criterios de aceptación:** Datos inconsistentes o editados manualmente en DevTools nunca rompen la ejecución del juego.
-- **Evidencia de pruebas:** `TC-SEC-004`, `TC-SEC-005`, `TC-SEC-006`, `TC-SEC-007` (`frontend/tests/security-account.test.js`).
+  - *EX-01 (Actualización inválida o adulteración):* El backend rechaza el cambio y el frontend muestra el error sin sustituir el progreso con almacenamiento local.
+  - *EX-02 (API no disponible):* Se informa que el guardado falló; no hay fallback local.
+- **Postcondiciones:** Progreso persistido en PostgreSQL y restaurado desde el backend.
+- **Criterios de aceptación:** El frontend no determina la integridad del progreso ni guarda una copia persistente local.
+- **Evidencia de pruebas:** `frontend/tests/account-api.test.js` y `backend/tests/test_clean_architecture_and_security.py`.
 
 ---
 
@@ -339,7 +331,7 @@ La siguiente tabla distingue estrictamente las capacidades **IMPLEMENTADAS** en 
 - **Flujo principal:**
   1. El jugador presiona la tecla `R` (`frontend/src/main.js:L104`) o hace clic en el botón `"Jugar de nuevo (R)"` (`frontend/src/main.js:L165-L167`).
   2. El sistema ejecuta `location.reload()`, lo que destruye por completo el contexto WebGL, temporizadores y objetos en memoria de la partida anterior.
-  3. Al recargar, `cuenta.sesion()` recupera automáticamente la sesión activa desde `sessionStorage` (`ideolo:v1:sesion`) sin obligar al usuario a escribir de nuevo su contraseña (`frontend/src/cuenta/cuenta.js:L121-L128`), y carga el nivel guardado actual.
+  3. Al recargar, `cuenta.sesion()` consulta el backend; la cookie HttpOnly permite recuperar la sesión y el nivel guardado sin volver a enviar la contraseña (`frontend/src/cuenta/apiCliente.js`, `backend/app/presentation/routers.py`).
 - **Postcondiciones:** Nueva partida inicializada sin temporizadores ni efectos obsoletos.
 - **Criterios de aceptación:** Ningún proyectil, enemigo ni temporizador de muerte de la partida anterior persiste tras el reinicio.
 - **Evidencia de pruebas:** `frontend/tests/game-state-coordinator.test.js` y `frontend/tests/game-state-recovery.test.js` (para el ciclo aislado) e inspección de `main.js:L104`, `:L165`.
@@ -353,7 +345,7 @@ La siguiente tabla distingue estrictamente las capacidades **IMPLEMENTADAS** en 
 - **Evidencia actual en código:**
   - En `frontend/src/main.js:L284`: `console.warn("precalentar:", e)` si falla la compilación asíncrona de shaders.
   - En `frontend/src/main.js:L731-L734`: `console.error(err)` y mensaje al usuario si falla `iniciar()`.
-  - En `frontend/src/cuenta/almacen.js` y `seguridad.js`: bloques `try/catch` silenciosos que evitan exponer claves, verificadores o contraseñas en la consola.
+  - El cliente API no registra credenciales ni tokens en consola; el backend emite eventos de auditoría sin almacenar contraseñas en claro (`backend/app/application/use_cases.py`).
   - En `frontend/src/juego/game-state-adapters.js:L17-L18`, `:L247`: registro estructurado inmutable `errores.push(Object.freeze({ operacion, motivo }))` consultable mediante `getErrores()` sin exponer tokens ni secretos, y sin ejecutarse por frame.
 - **Criterios de aceptación:** No existen `console.log` por frame en el bucle `animar()` ni se exponen contraseñas, sales o claves HMAC en consola.
 - **Evidencia de pruebas:** `frontend/tests/game-state-recovery.test.js` (verificación de `getErrores()`).
@@ -362,15 +354,15 @@ La siguiente tabla distingue estrictamente las capacidades **IMPLEMENTADAS** en 
 
 ### CU-019 — Validar seguridad
 - **Actor principal:** Administrador / Desarrollador (`ACT-004`).
-- **Estado de implementación:** **IMPLEMENTADO** (Suite automatizada de pruebas criptográficas y de integridad en Vitest + auditoría de código).
-- **Descripción:** Ejecución de verificaciones locales autorizadas sobre derivación PBKDF2, firmas HMAC-SHA256, validación de esquemas en `localStorage`, resistencia a inyección XSS en DOM y control de fuerza bruta.
-- **Precondiciones:** Entorno local del proyecto (`c:\Estudio\Seguridad-Multimedia`).
+- **Estado de implementación:** **IMPLEMENTADO** (Pruebas del backend y del cliente API).
+- **Descripción:** Verificación de hash de contraseñas, integridad del progreso, sesiones/CSRF, validación de entradas y prevención de inyección XSS en la interfaz.
+- **Precondiciones:** Entorno local del proyecto.
 - **Flujo principal:**
-  1. El desarrollador/auditor ejecuta `npm --prefix frontend test -- --run`.
-  2. La suite `frontend/tests/security-account.test.js` verifica criptografía (`PBKDF2`, `HMAC`, comparación constante), rechazo de payloads XSS (`<script>alert(1)</script>`), manejo de JSON corrupto, detección de adulteración de progreso en `localStorage` y bloqueo exponencial por fuerza bruta.
-  3. El auditor revisa las superficies DOM (`innerHTML` vs `textContent`) y la configuración de despliegue.
-- **Postcondiciones:** Evidencia reproducible de controles defensivos y matriz de riesgos documentada en `docs/security/security-audit.md`.
-- **Evidencia de pruebas:** `TC-SEC-001` a `TC-SEC-007` en `frontend/tests/security-account.test.js` (7 pruebas ejecutadas y aprobadas).
+  1. El desarrollador/auditor ejecuta `npm --prefix frontend test -- --run` y las pruebas del backend.
+  2. `frontend/tests/account-api.test.js` verifica que las acciones de cuenta y progreso usan la API, incluyen CSRF y no hacen fallback local.
+  3. `backend/tests/test_clean_architecture_and_security.py` verifica controles de dominio y de seguridad; el auditor revisa las superficies DOM y la configuración de despliegue.
+- **Postcondiciones:** Evidencia reproducible de los controles defensivos y matriz de riesgos en `docs/security/security-audit.md`.
+- **Evidencia de pruebas:** `frontend/tests/account-api.test.js`, `frontend/tests/arch-deploy-001.test.js` y `backend/tests/test_clean_architecture_and_security.py`.
 
 ---
 
@@ -384,12 +376,12 @@ La siguiente tabla distingue estrictamente las capacidades **IMPLEMENTADAS** en 
 | **RF-004** | Funcional | Interacción con el NPC Daniel, diálogos, cinemáticas y recolección de 2 ídolos por nivel | CU-006, CU-007, CU-008, CU-013 | `frontend/src/main.js:L299-L326`, `:L594-L625`, `cinematica.js`, `cinematicaPlaya.js`, `datos.js:L7-L62` | `TC-DATA-002`, `TC-DATA-003`, `TC-DATA-004`, `TC-FSM-005`, `TC-DOM-001` | **IMPLEMENTADO** |
 | **RF-005** | Funcional | Sistema de combate (puños y 4 armas), IA de mercenarios, daño, frío, muerte y derrota diferida (`POL-FSM-001`) | CU-009, CU-010, CU-011 | `frontend/src/juego/combate.js:L1-L68`, `frio.js:L1-L39`, `suministros.js:L1-L120`, `personajes/enemigo.js:L12-L271`, `main.js:L352-L389` | `TC-FSM-007`, `TC-DOM-002`, `TC-DOM-003`, `game-state-coordinator.test.js` (46), `game-state-recovery.test.js` (30) | **IMPLEMENTADO** |
 | **RF-006** | Funcional | Activación del portal/vehículo al completar objetivos, transición de nivel y escena final de victoria en la cabaña | CU-008, CU-014, CU-015 | `frontend/src/escenario/portal.js:L6-L103`, `casa.js:L4-L85`, `main.js:L329-L347`, `:L392-L413` | `TC-DOM-001`, `game-state.test.js` (105), `/pruebas.html` | **IMPLEMENTADO** |
-| **RF-007** | Funcional | Registro de cuentas locales, inicio de sesión y modo invitado | CU-002, CU-003 | `frontend/src/cuenta/cuenta.js:L33-L92`, `pantalla.js:L11-L85` | `TC-SEC-005`, `TC-SEC-006`, `TC-SEC-007` (`security-account.test.js`) | **IMPLEMENTADO** |
-| **RF-008** | Funcional | Guardado y recuperación de progreso (nivel, victorias y mejor tiempo) | CU-016 | `frontend/src/cuenta/cuenta.js:L95-L133`, `almacen.js:L36-L52` | `TC-SEC-004`, `TC-SEC-006`, `TC-SEC-007` (`security-account.test.js`) | **IMPLEMENTADO** |
-| **SEC-001** | Seguridad | Derivación criptográfica `PBKDF2-SHA256` (150 000 iteraciones, sal de 16 bytes) y separación de verificador y clave HMAC | CU-002, CU-003, CU-019 | `frontend/src/cuenta/seguridad.js:L10-L33` | `TC-SEC-001`, `TC-SEC-002`, `TC-SEC-003` (`security-account.test.js`) | **IMPLEMENTADO** |
-| **SEC-002** | Seguridad | Firma y verificación de integridad `HMAC-SHA256` sobre el progreso almacenado en `localStorage` | CU-003, CU-016, CU-019 | `frontend/src/cuenta/seguridad.js:L35-L47`, `cuenta.js:L73-L78`, `:L95-L108` | `TC-SEC-004`, `TC-SEC-006` (`security-account.test.js`) | **IMPLEMENTADO** |
-| **SEC-003** | Seguridad | Validación estricta de entradas, prevención de XSS (`textContent`), prevención de Prototype Pollution y bloqueo exponencial por fuerza bruta | CU-002, CU-003, CU-019 | `frontend/src/cuenta/almacen.js:L8-L40`, `cuenta.js:L21-L26`, `:L52-L68`, `pantalla.js:L1-L85` | `TC-SEC-005`, `TC-SEC-006` (`security-account.test.js`) | **IMPLEMENTADO** |
-| **SEC-004** | Seguridad | Gestión de sesión por pestaña en `sessionStorage` y degradación segura a modo invitado | CU-003, CU-017 | `frontend/src/cuenta/almacen.js:L6`, `:L50-L52`, `cuenta.js:L28-L31`, `:L120-L132` | `TC-SEC-006`, `TC-SEC-007` (`security-account.test.js`) | **IMPLEMENTADO** (Con riesgo inherente client-side documentado) |
+| **RF-007** | Funcional | Registro de cuenta e inicio de sesión mediante el backend; modo invitado | CU-002, CU-003 | `frontend/src/cuenta/cuenta.js`, `frontend/src/cuenta/apiCliente.js`, `backend/app/presentation/routers.py` | `frontend/tests/account-api.test.js`, `backend/tests/test_clean_architecture_and_security.py` | **IMPLEMENTADO** |
+| **RF-008** | Funcional | Guardado y recuperación de progreso en el backend (nivel, victorias y mejor tiempo) | CU-016 | `frontend/src/cuenta/apiCliente.js`, `backend/app/application/use_cases.py` | `frontend/tests/account-api.test.js`, `backend/tests/test_clean_architecture_and_security.py` | **IMPLEMENTADO** |
+| **SEC-001** | Seguridad | Hash de contraseñas con Argon2id | CU-002, CU-003, CU-019 | `backend/app/core/security.py` | `backend/tests/test_clean_architecture_and_security.py` | **IMPLEMENTADO** |
+| **SEC-002** | Seguridad | Firma y verificación HMAC-SHA256 del progreso persistido | CU-003, CU-016, CU-019 | `backend/app/core/security.py`, `backend/app/application/use_cases.py` | `backend/tests/test_clean_architecture_and_security.py` | **IMPLEMENTADO** |
+| **SEC-003** | Seguridad | Validación de entradas en el backend, prevención de XSS (`textContent`) y bloqueo por fuerza bruta | CU-002, CU-003, CU-019 | `backend/app/domain/entities/user.py`, `backend/app/application/use_cases.py`, `frontend/src/cuenta/pantalla.js` | `backend/tests/test_clean_architecture_and_security.py`, `frontend/tests/account-api.test.js` | **IMPLEMENTADO** |
+| **SEC-004** | Seguridad | Sesiones revocables con cookie HttpOnly, protección CSRF y acceso invitado sin persistencia | CU-003, CU-017 | `backend/app/presentation/routers.py`, `backend/app/presentation/dependencies.py`, `frontend/src/cuenta/apiCliente.js` | `frontend/tests/account-api.test.js`, `backend/tests/test_clean_architecture_and_security.py` | **IMPLEMENTADO** |
 | **RNF-001** | No Funcional | Rendimiento 3D adaptativo: perfiles de calidad (`alta`/`media`/`baja`), `InstancedMesh` para vegetación, recorte por frustum de personajes, precalentamiento de shaders y resolución dinámica | CU-001, CU-005 | `frontend/src/interfaz/dispositivo.js:L33-L62`, `juego/detalle.js:L20-L76`, `escenario/vegetacion.js:L12-L34`, `main.js:L280-L286`, `:L417-L428` | Herramienta de medición `/rendimiento.html` (`frontend/src/herramientas/rendimiento.js`) | **IMPLEMENTADO** |
 | **RNF-002** | No Funcional | Modularidad y separación de responsabilidades | Todos | Estructura en `escenario/`, `personajes/`, `juego/`, `interfaz/`, `cuenta/`, `audio/`, `herramientas/` | Build de producción Vite (`49 módulos transformados`) | **IMPLEMENTADO** (`main.js` mantiene acoplamiento de orquestación documentado en `ADR-001`) |
 | **RNF-003** | No Funcional | Testabilidad determinista de reglas de estado, datos, dominio y seguridad | Todos | `frontend/tests/*.test.js` (8 archivos, 215 pruebas automatizadas) + `/pruebas.html` | `npm --prefix frontend test -- --run` (215 passed) | **IMPLEMENTADO** |
