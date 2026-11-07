@@ -82,43 +82,40 @@ describe('ARCH-DEPLOY-001: Verificación de infraestructura Docker, Nginx, Postg
     expect(migration).toContain('"security_audit_logs"');
   });
 
-  it('TC-ARCH-005: cuenta.js integra modo explícito server con apiCliente.js sin fallback silencioso a localStorage', async () => {
+  it('TC-ARCH-005: cuenta.js delega registro e inicio de sesión al backend sin fallback local', async () => {
     const cuenta = await import('../src/cuenta/cuenta.js');
     const api = await import('../src/cuenta/apiCliente.js');
 
-    api.configurarClienteApi({
-      modo: api.MODOS_CUENTA.SERVER,
-      fetchFn: async () => {
-        throw new Error('Network unreachable');
-      },
-      csrfToken: null,
+    api.configurarFetchApi(async () => {
+      throw new Error('Network unreachable');
     });
 
     const fallo = await cuenta.registrar('MaxServer', 'ClaveSegura123');
     expect(fallo.ok).toBe(false);
-    expect(fallo.mensaje).toContain('modo \'server\' no se utiliza almacenamiento local');
+    expect(fallo.mensaje).toContain('No se pudo conectar con el servidor');
 
-    api.configurarClienteApi({
-      modo: api.MODOS_CUENTA.SERVER,
-      fetchFn: async (ruta) => ({
-        ok: true,
-        status: ruta.endsWith('/register') ? 201 : 200,
-        headers: { get: () => 'csrf-server-token' },
-        json: async () => ({
-          id: 1,
-          nombre: 'MaxServer',
-          csrfToken: 'csrf-server-token',
-          progreso: { nivel: 2, mejorTiempo: 120, victorias: 1 },
-        }),
+    api.configurarFetchApi(async () => ({
+      ok: true,
+      status: 200,
+      headers: { get: () => 'csrf-server-token' },
+      json: async () => ({
+        nombre: 'MaxServer',
+        csrfToken: 'csrf-server-token',
+        progreso: { nivel: 2, mejorTiempo: 120, victorias: 1 },
       }),
-    });
+    }));
 
     const exito = await cuenta.entrar('MaxServer', 'ClaveSegura123');
     expect(exito.ok).toBe(true);
     expect(cuenta.usuario()?.remoto).toBe(true);
     expect(cuenta.nivelGuardado()).toBe(1);
 
-    cuenta.cerrarSesion();
-    api.configurarClienteApi({ modo: api.MODOS_CUENTA.LOCAL, csrfToken: null });
+    api.configurarFetchApi(async () => ({
+      ok: true,
+      status: 200,
+      headers: { get: () => null },
+      json: async () => ({ ok: true }),
+    }));
+    await cuenta.cerrarSesion();
   });
 });

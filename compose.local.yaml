@@ -1,0 +1,12 @@
+services:
+  fastapi:
+    environment:
+      DEPLOY_TARGET: local
+      ENVIRONMENT: development
+
+  nginx:
+    ports:
+      - "127.0.0.1:${HTTP_PORT:-8080}:80"
+      - "127.0.0.1:${HTTPS_PORT:-8443}:443"
+    environment:
+      TLS_DOMAIN: ${TLS_DOMAIN:-localhost}

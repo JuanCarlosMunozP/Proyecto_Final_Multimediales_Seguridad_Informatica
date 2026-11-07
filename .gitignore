@@ -2,3 +2,4 @@ blender/blender-portable/
 *.zip
 node_modules/
 frontend/dist/
+.env

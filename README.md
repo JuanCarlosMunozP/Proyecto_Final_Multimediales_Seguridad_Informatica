@@ -42,10 +42,9 @@ la-busqueda-del-idolo-perdido/
 │   │   ├── interfaz/          INTERFAZ: HUD, diálogos y estilos
 │   │   │   ├── hud.js
 │   │   │   └── style.css
-│   │   ├── cuenta/            CUENTA: inicio de sesión con localStorage (ver abajo)
-│   │   │   ├── cuenta.js        registro, ingreso, progreso, bloqueo por intentos
-│   │   │   ├── seguridad.js     PBKDF2 + firma HMAC (SubtleCrypto)
-│   │   │   ├── almacen.js       lectura/escritura validada del localStorage
+│   │   ├── cuenta/            CUENTA: interfaz y cliente HTTP del backend
+│   │   │   ├── cuenta.js        estado de interfaz y acciones de progreso
+│   │   │   ├── apiCliente.js    solicitudes a la API, cookies y token CSRF
 │   │   │   └── pantalla.js      formulario de ingreso
 │   │   ├── audio/             AUDIO: sonido sintetizado con Web Audio
 │   │   │   └── audio.js
@@ -64,6 +63,25 @@ la-busqueda-del-idolo-perdido/
 ```
 
 ## Cómo ejecutar
+
+### Aplicación completa con Docker
+
+1. Copia `.env.example` a `.env` y reemplaza los valores `CHANGE_ME` por secretos únicos.
+2. Desde la raíz del proyecto, ejecuta:
+
+```bash
+docker compose --env-file .env -f compose.yaml -f compose.local.yaml up -d --build
+```
+
+La aplicación quedará disponible en `https://localhost:8443`. Nginx genera un certificado
+autofirmado para desarrollo; el navegador mostrará una advertencia de confianza. La API y
+PostgreSQL no se publican directamente al host. Para apagar los servicios:
+
+```bash
+docker compose --env-file .env -f compose.yaml -f compose.local.yaml down
+```
+
+### Solo el frontend con Vite
 
 ```bash
 cd frontend
@@ -126,18 +144,13 @@ caminar, correr, saltar y golpear (arrastra para girar, rueda para acercar).
 
 `http://localhost:5173/#demo` empieza directamente la partida; `#demo=x,z` además coloca a Max en esa posición.
 
-## Inicio de sesión con localStorage
+## Cuentas y progreso
 
-No hay servidor ni base de datos: las cuentas viven en el `localStorage` del navegador y por eso solo
-existen en ese navegador. Protecciones (código en `frontend/src/cuenta/`):
+El frontend envía el registro, el inicio/cierre de sesión y las actualizaciones de progreso a la API
+FastAPI del backend. El backend valida credenciales y progreso, aplica los controles de seguridad y
+persiste los datos en PostgreSQL. La sesión usa una cookie HttpOnly y las solicitudes de escritura
+incluyen un token CSRF; el frontend no almacena contraseñas, cuentas ni progreso en Web Storage.
 
-- **La contraseña no se guarda.** Solo un verificador PBKDF2-SHA256 (150 000 vueltas) con una sal aleatoria por usuario.
-- **Datos firmados.** El progreso (nivel, mejor tiempo, victorias) lleva una firma HMAC-SHA256 con una clave derivada de la contraseña, que nunca se guarda. Si alguien edita el almacenamiento a mano, la firma no coincide y los datos se restablecen.
-- **Validación al leer.** Tipos, rangos y formato de cada registro; JSON roto o registros alterados se descartan.
-- **Bloqueo por intentos.** Tras 3 contraseñas incorrectas la espera se duplica (tope 5 minutos). El mensaje de error es el mismo si el usuario no existe.
-- **Sin inyección de HTML.** El nombre se limita a 3–16 letras, números, espacios, `-` y `_`, y siempre se pinta con `textContent`.
-- **Sesión por pestaña** en `sessionStorage` (se cierra con la pestaña) y modo invitado sin guardar nada.
-
-Límites (todo corre en el navegador): quien tenga acceso al equipo puede borrar los datos o restaurar una copia
-antigua, y el bloqueo por intentos se puede saltar borrando el almacenamiento. Necesita `https` o `localhost`
-(SubtleCrypto); en otro caso el juego ofrece el modo invitado.
+Al ejecutar Vite, el proxy `/api` apunta por defecto a `http://127.0.0.1:8000` (configurable con
+`VITE_API_TARGET`), por lo que el backend debe estar disponible para usar cuentas. El modo invitado
+permite jugar sin guardar progreso.

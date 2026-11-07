@@ -42,6 +42,22 @@ def test_argon2id_password_hashing_and_domain_invariants():
     assert progress.current_level == 2
 
 
+def test_victory_resets_level_and_preserves_best_time_and_victory_count():
+    progress = GameProgress(
+        user_id="u1",
+        username="max",
+        current_level=3,
+        best_time_seconds=100,
+        victories=2,
+    )
+
+    progress.apply_progress_update(victory_seconds=120)
+
+    assert progress.current_level == 1
+    assert progress.victories == 3
+    assert progress.best_time_seconds == 100
+
+
 def test_opaque_revocable_session_and_csrf_protection():
     """
     Verifica:
@@ -108,6 +124,25 @@ def test_user_isolation_and_admin_endpoint_protection():
         )
         assert res_admin.status_code == 200
         assert len(res_admin.json()) >= 2
+
+
+def test_victory_resets_progress_to_first_level_and_keeps_statistics():
+    with TestClient(app) as client:
+        reg = client.post(
+            "/api/v1/auth/register", json={"nombre": "Ganador", "clave": "ClaveSegura#26"}
+        )
+        csrf = reg.json()["csrfToken"]
+        client.put("/api/v1/progress", json={"nivel": 2}, headers={"X-CSRF-Token": csrf})
+        client.put("/api/v1/progress", json={"nivel": 3}, headers={"X-CSRF-Token": csrf})
+
+        victory = client.put(
+            "/api/v1/progress",
+            json={"nivel": 1, "tiempoVictoria": 120},
+            headers={"X-CSRF-Token": csrf},
+        )
+
+        assert victory.status_code == 200
+        assert victory.json() == {"nivel": 1, "mejorTiempo": 120, "victorias": 1}
 
 
 def test_anti_cheat_blocks_level_jump_and_brute_force_locks_account():

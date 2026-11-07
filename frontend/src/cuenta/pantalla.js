@@ -8,7 +8,7 @@ const el = (etiqueta, props = {}, ...hijos) => {
 };
 const tiempo = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
-export function mostrarPantallaCuenta({ registrar, entrar, entrarComoInvitado, disponible }) {
+export function mostrarPantallaCuenta({ registrar, entrar, entrarComoInvitado, mensajeInicial = "" }) {
   return new Promise((resolver) => {
     let modo = "entrar";
     const mensaje = el("p", { className: "cuenta-mensaje", role: "alert" });
@@ -20,7 +20,7 @@ export function mostrarPantallaCuenta({ registrar, entrar, entrarComoInvitado, d
     const pestCrear = el("button", { type: "button", textContent: "Crear cuenta" });
     const invitado = el("button", { type: "button", className: "cuenta-invitado", textContent: "Jugar como invitado (sin guardar)" });
     const nota = el("p", { className: "cuenta-nota",
-      textContent: "Tu cuenta y tu progreso se guardan solo en este navegador, protegidos con tu contraseña. No hay servidor." });
+      textContent: "Tu cuenta y tu progreso se guardan de forma segura en el servidor." });
     const form = el("form", {}, nombre, clave, repetir, mensaje, enviar);
     const caja = el("div", { className: "cuenta-caja" },
       el("h2", { textContent: "Inicia sesión" }), el("div", { className: "cuenta-pestanas" }, pestEntrar, pestCrear), form, invitado, nota);
@@ -38,7 +38,7 @@ export function mostrarPantallaCuenta({ registrar, entrar, entrarComoInvitado, d
       enviar.textContent = modo === "crear" ? "Crear cuenta y jugar" : "Ingresar y jugar";
       pestEntrar.classList.toggle("activa", modo === "entrar");
       pestCrear.classList.toggle("activa", modo === "crear");
-      mensaje.textContent = "";
+      mensaje.textContent = mensajeInicial;
     };
     const terminar = () => { detras.forEach((e) => (e.inert = false)); capa.remove(); resolver(); };
     capa.addEventListener("keydown", (e) => {            // el foco da vueltas dentro del cuadro (Tab / Mayús+Tab)
@@ -63,10 +63,6 @@ export function mostrarPantallaCuenta({ registrar, entrar, entrarComoInvitado, d
     pestEntrar.onclick = () => cambiar("entrar");
     pestCrear.onclick = () => cambiar("crear");
     invitado.onclick = () => { entrarComoInvitado(); terminar(); };
-    if (!disponible) {
-      mensaje.textContent = "Tu navegador no permite cuentas seguras aquí (hace falta https o localhost).";
-      for (const b of [nombre, clave, repetir, enviar]) b.disabled = true;
-    }
     cambiar("entrar");
     document.body.appendChild(capa);
     nombre.focus();

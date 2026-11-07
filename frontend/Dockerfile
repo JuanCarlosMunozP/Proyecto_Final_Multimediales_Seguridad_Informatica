@@ -7,8 +7,6 @@ COPY frontend/package*.json ./
 RUN npm ci --no-audit --no-fund
 
 COPY frontend/ ./
-ARG VITE_AUTH_MODE=server
-ENV VITE_AUTH_MODE=${VITE_AUTH_MODE}
 RUN npm run build
 
 # Etapa 2: Gateway Nginx con TLS 1.3, Hardening y Reverse Proxy hacia /api/v1

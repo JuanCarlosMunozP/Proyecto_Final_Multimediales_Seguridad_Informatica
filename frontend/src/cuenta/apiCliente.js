@@ -1,39 +1,12 @@
-// ARCH-DEPLOY-001 — Cliente de Cuentas con dos modos explícitos: "local" y "server".
-// Regla de seguridad obligatoria:
-//   - En modo "local": opera exclusivamente con Web Crypto API + localStorage (comportamiento actual).
-//   - En modo "server": opera exclusivamente contra /api/v1/* (FastAPI + PostgreSQL) usando cookies
-//     HttpOnly + token anti-CSRF (X-CSRF-Token). Si la API falla o no responde, NO hace fallback
-//     silencioso a localStorage: devuelve un error explícito y seguro.
-// Nota: Conectado a cuenta.js mediante selección explícita de modo (MODOS_CUENTA.LOCAL | MODOS_CUENTA.SERVER).
-
-export const MODOS_CUENTA = Object.freeze({
-  LOCAL: "local",
-  SERVER: "server",
-});
-
-function leerModoPorDefecto() {
-  const envModo = typeof import.meta !== "undefined" && import.meta.env?.VITE_AUTH_MODE;
-  return envModo === MODOS_CUENTA.SERVER ? MODOS_CUENTA.SERVER : MODOS_CUENTA.LOCAL;
-}
-
-let modoActual = leerModoPorDefecto();
 let csrfTokenMemoria = null;
 let fetchImpl = (...args) => globalThis.fetch(...args);
-
-export function modoCuentaActual() {
-  return modoActual;
-}
 
 export function tokenCsrfActual() {
   return csrfTokenMemoria;
 }
 
-export function configurarClienteApi({ modo = null, fetchFn = null, csrfToken = undefined } = {}) {
-  if (modo === MODOS_CUENTA.LOCAL || modo === MODOS_CUENTA.SERVER) {
-    modoActual = modo;
-  }
-  if (fetchFn) fetchImpl = fetchFn;
-  if (csrfToken !== undefined) csrfTokenMemoria = csrfToken;
+export function configurarFetchApi(fetchFn) {
+  fetchImpl = fetchFn;
 }
 
 export function adaptarDatosServidor(progreso = {}) {
@@ -49,15 +22,6 @@ export function adaptarDatosServidor(progreso = {}) {
 }
 
 async function peticionJson(ruta, metodo = "GET", cuerpo = null) {
-  if (modoActual !== MODOS_CUENTA.SERVER) {
-    return {
-      ok: false,
-      status: 0,
-      codigo: "MODE_NOT_SERVER",
-      mensaje: "El cliente API solo puede invocarse cuando el modo explícito es 'server'.",
-    };
-  }
-
   const headers = { Accept: "application/json" };
   if (cuerpo !== null) {
     headers["Content-Type"] = "application/json";
@@ -75,12 +39,11 @@ async function peticionJson(ruta, metodo = "GET", cuerpo = null) {
       body: cuerpo !== null ? JSON.stringify(cuerpo) : undefined,
     });
   } catch {
-    // Prohibido hacer fallback silencioso a localStorage en modo server
     return {
       ok: false,
       status: 503,
       codigo: "SERVER_UNREACHABLE",
-      mensaje: "No se pudo conectar con el servidor de seguridad (/api/v1). En modo 'server' no se utiliza almacenamiento local de respaldo.",
+      mensaje: "No se pudo conectar con el servidor de cuentas (/api/v1).",
     };
   }
 
